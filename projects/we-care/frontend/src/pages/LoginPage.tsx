@@ -92,9 +92,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <p className="mt-6 text-xs text-subtle">
-        For emergency technical support, contact IT at Ext. 4992
-      </p>
     </div>
   )
 }
