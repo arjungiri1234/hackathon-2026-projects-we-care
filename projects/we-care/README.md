@@ -1,87 +1,135 @@
-# RefAI — AI Referral Management Portal
+# RefAI — AI-Powered Referral Management Portal
 
-## Team
-| Name | GitHub |
-|---|---|
-| Arjun Giri 
-| Anil 
-
-**Team Name:** We Care
+**Team:** We Care
 **Hackathon:** CareDevi AI Innovation Hackathon 2026
 
+| Name       | GitHub |
+| ---------- | ------ |
+| Arjun Giri |        |
+| Anil       |        |
+
 ---
 
-## Problem Statement
+## Problem
 
-Patient referrals in healthcare are largely manual — doctors write free-text notes, staff transcribe them, and there is no unified way to track whether a referral was received, accepted, or completed. This leads to delayed care, lost referrals, and poor patient outcomes.
+Patient referrals in healthcare are still largely manual. Doctors write free-text notes, staff transcribe them by hand, and there is no unified system to track whether a referral was received, accepted, or completed. The result: delayed care, lost referrals, and poor patient outcomes — all from a process that has not meaningfully changed in decades.
 
 ---
 
-## Solution
+## Proposed Solution
 
-**RefAI** is an AI-powered referral management portal that:
+**RefAI** is a web-based referral management portal that uses AI to remove friction from the referral workflow for both doctors and patients.
 
-1. **Auto-fills referral details** — Doctors type free-text clinical notes; AI extracts structured data (patient info, diagnosis, urgency, required specialty).
-2. **Suggests the best specialist** — Based on extracted diagnosis and required specialty.
-3. **Tracks referral status end-to-end** — From submission to specialist acceptance, every step is visible on a live dashboard.
+**For doctors:**
+
+- Write a free-text clinical note as they normally would
+- AI (Google Gemini) extracts structured data automatically — patient details, diagnosis, urgency level, and required specialty
+- Doctor reviews, edits if needed, selects the best-matched specialist, and submits in one flow
+- Live dashboard tracks every referral from submission to completion
+
+**For patients:**
+
+- Receive an email or SMS with a secure link — no account or password needed
+- View their referral status in real time
+- Book an appointment directly with the referred specialist by selecting a date and time slot
+- Referral status updates automatically when appointment is booked and confirmed
+
+---
+
+## Key Features
+
+| Feature             | Description                                                       |
+| ------------------- | ----------------------------------------------------------------- |
+| AI Extraction       | Gemini parses clinical notes into structured fields               |
+| Specialist Matching | Filters available specialists by extracted required specialty     |
+| Status Timeline     | Real-time tracking: Pending → Sent → Accepted → Completed         |
+| Patient Portal      | Token-gated, no-login page for patients to track and book         |
+| Appointment Booking | Patient picks date and time slot; triggers referral status update |
+| Audit Trail         | Every status change recorded with timestamp                       |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React, TypeScript, TailwindCSS |
-| Backend | Node.js, TypeScript |
-| Database | Supabase (PostgreSQL + Auth) |
-| AI | Google Gemini API (Gemini 1.5 Flash) |
+| Layer            | Technology                                                    |
+| ---------------- | ------------------------------------------------------------- |
+| Frontend         | Vite, React, TypeScript, TailwindCSS, Zustand, TanStack Query |
+| Backend          | Node.js, TypeScript                                           |
+| Database & Auth  | Supabase (PostgreSQL)                                         |
+| AI               | Google Gemini API (Gemini 1.5 Flash)                          |
+| Design           | Google Stitch                                                 |
+| Containerization | Docker                                                        |
 
 ---
 
 ## Architecture
 
 ```
-Doctor (Web App)
+Doctor (Browser)
       ↓
-React Frontend (TypeScript + TailwindCSS)
+React Frontend — Vite + TypeScript + TailwindCSS
       ↓
-Node.js Backend API
+Node.js REST API
+      ├── Gemini API — clinical note extraction
+      └── Supabase — doctors, patients, specialists,
+                     referrals, appointments, status history
+
+Patient (Email / SMS link)
       ↓
-Gemini API ←→ Free-text extraction & specialist suggestion
+Token-gated Patient Portal (/p/:token)
       ↓
-Supabase (referral records, specialist profiles, status tracking)
+Node.js REST API (public routes, token-validated)
+      └── Supabase — referral read, appointment booking
 ```
 
 ---
 
-## Setup Instructions
+## Database Design
+
+Core tables: `doctors`, `specialists`, `patients`, `referrals`, `referral_status_history`, `appointments`, `patient_tokens`
+
+Notable design decisions:
+
+- `referral_status_history` stores a timestamped record per status change, powering the timeline UI
+- `appointments` has a UNIQUE constraint on `referral_id` — one appointment per referral
+- Patient portal access is stateless: a signed token maps to a referral, expires after use
+
+Schema: `backend/supabase/schema.sql`
+
+---
+
+## Setup
 
 1. Clone this repository
 2. Copy `.env.example` to `.env` and fill in:
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
    - `GEMINI_API_KEY`
-3. Install frontend dependencies:
+3. Run schema and seed against your Supabase project:
    ```
-   cd frontend && npm install
+   backend/supabase/schema.sql
+   backend/supabase/seed.sql
    ```
-4. Install backend dependencies:
+4. Install and run backend:
    ```
-   cd backend && npm install
+   cd backend && npm install && npm run dev
    ```
-5. Run backend: `npm run dev` inside `backend`
-6. Run frontend: `npm run dev` inside `frontend`
+5. Install and run frontend:
+   ```
+   cd frontend && npm install && npm run dev
+   ```
 
 ---
 
 ## Demo
 
-> Demo video and screenshots will be added before submission deadline.
+> Demo video and screenshots will be added before the submission deadline.
 
 ---
 
 ## Limitations
 
-- Specialist availability is mocked — real scheduling integration is out of scope
-- Not connected to real EHR systems; all patient data is synthetic/demo only
-- AI extraction requires reasonably complete clinical notes to work well
+- Specialist availability is mocked — no real scheduling system integration
+- Not connected to real EHR systems — all patient data is synthetic
+- AI extraction quality depends on completeness of clinical notes
+- Email/SMS delivery uses a third-party service; not implemented in demo
