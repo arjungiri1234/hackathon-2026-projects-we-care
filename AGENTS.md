@@ -64,6 +64,40 @@ For every feature or change:
 
 DRY applies to everything — components, pages, hooks, validators, API calls, constants, types. If you write it twice, extract it.
 
+## Component Design
+
+Think before writing JSX. Decompose first, code second.
+
+### Decompose before you code
+
+Look at the design and identify every distinct visual unit. Ask for each:
+- Does it repeat? → must be a component
+- Does it have internal state or logic? → must be a component
+- Is it used in more than one place now, or likely to be? → must be a component
+- Does the parent become hard to read without extracting it? → must be a component
+
+### Specific rules
+
+**Layouts are components.** Sidebar, topbar, page shell — each is its own component. Pages render inside layouts via `<Outlet />`. Never inline layout markup inside a page.
+
+**Nav items are components.** If sidebar or topbar renders a list of nav links, each link is a `NavItem` component. The list is driven by a data array, not repeated JSX.
+
+**Cards are components.** If a section renders multiple similar cards (stat cards, patient cards, referral cards), extract a typed `Card` or `StatCard` component. The parent maps over data and renders the component — no duplicated card markup.
+
+**Tables are compound components.** A table is not one big `<table>` block. Decompose it:
+- `Table` — wraps `<table>`, handles container and border styles
+- `TableHeader` — column definitions driven by a config array, not repeated `<th>` elements
+- `TableRow` — receives one typed data object as prop, renders all cells for that row
+- Status badges, urgency badges → each a typed component with a variant map (`PENDING` → orange, etc.)
+
+**Never repeat JSX.** If you write the same structure twice — even with different props — stop and extract it. Two copies means the logic is wrong, not that a component is unnecessary.
+
+**Data drives rendering.** Mock data, table columns, nav items, tab labels — define them as typed arrays/objects at the top of the file or in a constants file. Never hardcode values inline inside `.map()` or repeated renders.
+
+**Props over variants inline.** Different appearances (urgency: HIGH/ELEVATED/ROUTINE, status: PENDING/ACCEPTED/etc.) must be expressed as a `variant` or typed union prop with a lookup map — never as conditional className strings scattered through JSX.
+
+**Component size limit.** If a component's JSX exceeds ~60 lines, it is doing too much. Split it.
+
 ## Coding Practices
 
 - SOLID principles; separate logic from UI components
