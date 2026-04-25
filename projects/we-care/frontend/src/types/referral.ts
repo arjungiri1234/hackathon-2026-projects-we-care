@@ -11,3 +11,14 @@ export interface Referral {
   status: ReferralStatus
   date: string
 }
+
+export interface ExtractedData {
+  patientName: string
+  dob: string
+  gender: string
+  email: string
+  phone: string
+  requiredSpecialty: string
+  diagnosis: string
+  urgency: string
+}

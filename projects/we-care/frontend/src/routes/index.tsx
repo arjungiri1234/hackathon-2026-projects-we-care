@@ -3,8 +3,8 @@ import LoginPage from '../pages/LoginPage'
 import SignupPage from '../pages/SignupPage'
 import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 import DashboardPage from '../pages/DashboardPage'
+import NewReferralPage from '../pages/NewReferralPage'
 import {
-  NewReferralPage,
   ReferralDetailPage,
   SpecialistsPage,
   PatientPortalPage,

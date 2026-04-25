@@ -1,4 +1,3 @@
-export function NewReferralPage() { return <div>New Referral</div> }
 export function ReferralDetailPage() { return <div>Referral Detail</div> }
 export function SpecialistsPage() { return <div>Specialists</div> }
 export function PatientPortalPage() { return <div>Patient Portal</div> }
