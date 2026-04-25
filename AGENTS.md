@@ -84,3 +84,4 @@ DRY applies to everything — components, pages, hooks, validators, API calls, c
 - Subject line must describe the specific change — no vague messages like "update file" or "fix stuff"
 - No `Co-Authored-By:` AI attribution
 - Commit after every completed task, not at the end of a session
+- When adding a file to a folder that contains `.gitkeep`, delete the `.gitkeep` file in a separate commit before or after adding the new file
