@@ -25,6 +25,8 @@ def init_db() -> None:
     conn = get_connection()
     with open(SCHEMA_PATH) as f:
         conn.executescript(f.read())
+    _ensure_patient_email_column(conn)
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_patients_email ON patients(email)")
     conn.commit()
     conn.close()
     print(f"[db] Tables created at {DB_PATH}")
@@ -32,14 +34,15 @@ def init_db() -> None:
 
 # ── Patient ────────────────────────────────────────────────────
 
-def save_patient(name: str, age: int, sex: str,
+def save_patient(email: str, name: str, age: int, sex: str,
                  height_cm: float, weight_kg: float, place: str) -> str:
     patient_id = str(uuid.uuid4())
+    clean_email = (email or "").strip().lower()
     conn = get_connection()
     conn.execute(
-        "INSERT INTO patients (id, name, age, sex, height_cm, weight_kg, place) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (patient_id, name, age, sex, height_cm, weight_kg, place)
+        "INSERT INTO patients (id, email, name, age, sex, height_cm, weight_kg, place) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (patient_id, clean_email, name, age, sex, height_cm, weight_kg, place)
     )
     conn.commit()
     conn.close()
@@ -49,6 +52,14 @@ def save_patient(name: str, age: int, sex: str,
 def get_patient(patient_id: str) -> dict | None:
     conn = get_connection()
     row = conn.execute("SELECT * FROM patients WHERE id = ?", (patient_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def get_patient_by_email(email: str) -> dict | None:
+    clean_email = (email or "").strip().lower()
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM patients WHERE email = ?", (clean_email,)).fetchone()
     conn.close()
     return dict(row) if row else None
 
@@ -138,6 +149,10 @@ def get_patient_as_fhir(patient_id: str) -> dict:
         "gender": p.get("sex", "unknown").lower(),
         "birthDate": _age_to_birthdate(p.get("age")),
         "address": [{"text": p.get("place", "")}],
+        "telecom": ([{
+            "system": "email",
+            "value": p.get("email", "")
+        }] if p.get("email") else []),
         "extension": [
             {
                 "url": "http://example.org/height",
@@ -278,12 +293,19 @@ def _map_severity(severity: str) -> str:
     return mapping.get((severity or "").lower(), "unable-to-assess")
 
 
+def _ensure_patient_email_column(conn: sqlite3.Connection) -> None:
+    cols = conn.execute("PRAGMA table_info(patients)").fetchall()
+    col_names = [c["name"] if isinstance(c, sqlite3.Row) else c[1] for c in cols]
+    if "email" not in col_names:
+        conn.execute("ALTER TABLE patients ADD COLUMN email TEXT")
+
+
 # ── Quick test ─────────────────────────────────────────────────
 
 if __name__ == "__main__":
     init_db()
 
-    pid = save_patient("Jane Doe", 35, "female", 162.0, 65.0, "Austin, TX")
+    pid = save_patient("jane@example.com", "Jane Doe", 35, "female", 162.0, 65.0, "Austin, TX")
     print(f"Created patient: {pid}")
 
     save_allergy(pid, "penicillin", "severe")

@@ -10,7 +10,7 @@ def show():
     user_name = user_profile.get('name', 'Patient')
     
     st.title("🌡️ Symptom Checker")
-    st.markdown(f"Hello **{user_name}**, please describe what you are experiencing.")
+    st.markdown(f"Hello Friend!, please describe what symptoms you are experiencing.")
 
     with st.container(border=True):
         st.subheader("Current Distress")
@@ -68,7 +68,4 @@ def show():
                 st.session_state.current_symptoms = raw_text
                 st.success("Symptoms saved! Ready for BioMistral analysis.")
 
-    # 6. Reset Option
-    if st.button("🔄 Clear All Input"):
-        st.session_state.transcript = ""
-        st.rerun()
+    

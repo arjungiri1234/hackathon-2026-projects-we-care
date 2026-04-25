@@ -3,6 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS patients (
     id           TEXT PRIMARY KEY,
+    email        TEXT UNIQUE,
     name         TEXT NOT NULL,
     age          INTEGER,
     sex          TEXT,
