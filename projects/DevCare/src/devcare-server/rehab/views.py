@@ -143,3 +143,37 @@ class SessionCompleteView(APIView):
 		session = serializer.save_results(session)
 		response_serializer = ExerciseSessionSerializer(session)
 		return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+class PatientSessionHistoryView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request, patient_id):
+		profile = getattr(request.user, "profile", None)
+		if not profile or profile.role != UserProfile.ROLE_DOCTOR:
+			return Response({"detail": "Only doctors can view patient history."}, status=status.HTTP_403_FORBIDDEN)
+
+		sessions = ExerciseSession.objects.filter(patient_id=patient_id).order_by("-started_at")
+		serializer = ExerciseSessionSerializer(sessions, many=True)
+		return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PatientStreakView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request, patient_id):
+		profile = getattr(request.user, "profile", None)
+		if not profile or profile.role != UserProfile.ROLE_DOCTOR:
+			return Response({"detail": "Only doctors can view patient streak data."}, status=status.HTTP_403_FORBIDDEN)
+
+		dates = ExerciseSession.objects.filter(
+			patient_id=patient_id, 
+			completed_at__isnull=False
+		).values_list('completed_at__date', flat=True).distinct().order_by("-completed_at__date")
+
+		return Response({
+			"patient_id": patient_id,
+			"active_days": list(dates),
+			"total_days": len(dates)
+		}, status=status.HTTP_200_OK)
+
