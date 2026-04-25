@@ -69,7 +69,7 @@ For every feature or change:
 - Do not use deprecated code
 - Write Dry code
 - use tailwind provided class instead of custom
-- create reusable components
+- Create reusable, extensible components — always extend native HTML element props (e.g. `ButtonHTMLAttributes`, `InputHTMLAttributes`) so consumers can pass any native attribute without extra wiring
 - write test cases for logics and verify
 
 ## Commit Guidelines
