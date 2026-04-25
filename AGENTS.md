@@ -75,3 +75,4 @@ For every feature or change:
 - Short subject lines — no filler
 - Commit history is scored; commit early and often
 - Do not add `Co-Authored-By:` AI attribution to commits
+- write meaningful commit
