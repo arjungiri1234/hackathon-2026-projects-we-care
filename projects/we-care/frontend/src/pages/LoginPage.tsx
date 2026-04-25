@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { FormInput } from '../components/ui/FormInput'
 import { Logo } from '../components/ui/Logo'
@@ -7,6 +8,7 @@ import { loginSchema, type LoginForm } from '../types/auth'
 type FormErrors = { email?: string; password?: string }
 
 export default function LoginPage() {
+  const navigate = useNavigate()
   const [form, setForm] = useState<LoginForm>({ email: '', password: '' })
   const [errors, setErrors] = useState<FormErrors>({})
   const [loading, setLoading] = useState(false)
@@ -71,7 +73,7 @@ export default function LoginPage() {
             onChange={handleChange}
             error={errors.password}
             hint={
-              <Button variant="text" type="button" className="text-xs">
+              <Button variant="text" type="button" className="text-xs" onClick={() => navigate('/forgot-password')}>
                 Forgot Password?
               </Button>
             }
@@ -85,7 +87,7 @@ export default function LoginPage() {
         <div className="mt-6 border-t border-border pt-5 text-center">
           <p className="text-sm text-muted">
             Don't have an account?{' '}
-            <Button variant="text" type="button" className="text-sm font-medium">
+            <Button variant="text" type="button" className="text-sm font-medium" onClick={() => navigate('/signup')}>
               Create an account
             </Button>
           </p>
