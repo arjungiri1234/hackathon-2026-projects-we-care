@@ -7,6 +7,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import roomImage from '../assets/medical-room.png';
 import loginImage from '../assets/login-image.png';
 
+import logo from '../assets/Devcare-logo.png';
+
 function AuthPage({ initialMode = 'login' }) {
   const navigate = useNavigate();
   const [mode, setMode] = useState(initialMode);
@@ -33,11 +35,13 @@ function AuthPage({ initialMode = 'login' }) {
         <div className="site-container grid lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center">
           {/* Left Side: Branding */}
           <div className="hidden lg:block">
-            <h2 className="text-2xl font-black text-[var(--color-primary-strong)] mb-8 tracking-tight">DevCare</h2>
-            <h1 className="text-4xl xl:text-5xl font-bold text-[var(--color-primary-strong)] leading-[1.1] mb-6">
+            <div className="mb-8">
+              <img src={logo} alt="DevCare Logo" className="h-8 w-auto" />
+            </div>
+            <h1 className="text-3xl xl:text-4xl font-bold text-[var(--color-primary-strong)] leading-[1.1] mb-6">
               {mode === 'login' ? 'Welcome Back' : 'Join DevCare'}
             </h1>
-            <p className="text-[var(--color-text-muted)] text-lg mb-10 max-w-lg leading-relaxed">
+            <p className="text-[var(--color-text-muted)] text-base mb-10 max-w-lg leading-relaxed">
               {mode === 'login' 
                 ? 'Continue your recovery journey with DevCare.' 
                 : 'Get started with smarter, guided recovery from the comfort of your home.'}

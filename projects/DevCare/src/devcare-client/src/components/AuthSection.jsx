@@ -119,10 +119,10 @@ function AuthSection({ onAuthSuccess, mode: propsMode, onModeChange }) {
 
   return (
     <article className="elevated-card rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 sm:p-12 shadow-2xl">
-      <h3 className="text-3xl font-bold text-[var(--color-primary-strong)] mb-2">
+      <h3 className="text-2xl font-bold text-[var(--color-primary-strong)] mb-2">
         {mode === 'register' ? 'Join DevCare' : 'Welcome Back'}
       </h3>
-      <p className="text-[var(--color-text-muted)] text-sm mb-8">
+      <p className="text-[var(--color-text-muted)] text-[13px] mb-8">
         {mode === 'register' 
           ? 'Get started with smarter, guided recovery from the comfort of your home.' 
           : 'Continue your recovery journey with DevCare.'}
@@ -171,31 +171,31 @@ function AuthSection({ onAuthSuccess, mode: propsMode, onModeChange }) {
                   <button
                     type="button"
                     onClick={() => setForm(f => ({ ...f, role: 'patient' }))}
-                    className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all ${
+                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
                       form.role === 'patient' 
                       ? 'bg-[#E3F2FD] border-[#1E88E5] text-[#1E88E5]' 
                       : 'bg-white border-[#ECEFF1] text-[#607D8B] hover:border-[#CFD8DC]'
                     }`}
                   >
-                    <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="font-bold text-sm">Patient</span>
+                    <span className="font-bold text-xs">Patient</span>
                   </button>
                   
                   <button
                     type="button"
                     onClick={() => setForm(f => ({ ...f, role: 'doctor' }))}
-                    className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all ${
+                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
                       form.role === 'doctor' 
                       ? 'bg-[#E3F2FD] border-[#1E88E5] text-[#1E88E5]' 
                       : 'bg-white border-[#ECEFF1] text-[#607D8B] hover:border-[#CFD8DC]'
                     }`}
                   >
-                    <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
-                    <span className="font-bold text-sm">Doctor</span>
+                    <span className="font-bold text-xs">Doctor</span>
                   </button>
                 </div>
               </>
