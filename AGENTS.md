@@ -58,8 +58,11 @@ For every feature or change:
 
 1. Clarify requirements — ask if unclear before writing code
 2. Chunk into tasks
-3. For each task: write test → implement → verify → commit → next task
-4. Update `responsible-ai.md` when AI features are added or changed
+3. Before implementing — scan existing code for reusable components, hooks, utilities, and logic. Never duplicate what already exists. If similar code appears more than once, extract it first
+4. For each task: write test → implement → verify → commit → next task
+5. Update `responsible-ai.md` when AI features are added or changed
+
+DRY applies to everything — components, pages, hooks, validators, API calls, constants, types. If you write it twice, extract it.
 
 ## Coding Practices
 
