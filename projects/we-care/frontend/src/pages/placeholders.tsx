@@ -1,4 +1,3 @@
-export function DashboardPage() { return <div>Dashboard</div> }
 export function NewReferralPage() { return <div>New Referral</div> }
 export function ReferralDetailPage() { return <div>Referral Detail</div> }
 export function SpecialistsPage() { return <div>Specialists</div> }
