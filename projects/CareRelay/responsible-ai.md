@@ -14,9 +14,10 @@ CareRelay is a hackathon prototype for helping clinicians review a synthetic pat
 Implemented:
 - FHIR parsing is deterministic Python code.
 - Drug warning lookup uses OpenFDA label data. It does not use an LLM for drug interaction checking.
+- First-visit brief generation calls a HuggingFace model when configured, with a deterministic fallback summary if the model is unavailable.
+- The first-visit brief endpoint is designed to use a HuggingFace generative model. OpenBioLLM (`aaditya/Llama3-OpenBioLLM-70B`) was evaluated as the preferred clinical model but provider availability varies. The demo uses `meta-llama/Llama-3.1-8B-Instruct` with strict healthcare-safe prompting as a reliable fallback.
 
 Planned:
-- First-visit brief generation using a HuggingFace medical language model.
 - Medical named entity extraction using a HuggingFace clinical NER model.
 
 AI output will be framed as an assistive summary for clinician review, not as a diagnosis or treatment recommendation.

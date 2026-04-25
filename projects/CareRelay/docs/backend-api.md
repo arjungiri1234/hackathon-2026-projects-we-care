@@ -135,11 +135,35 @@ const data = await response.json();
 // <img src={data.qr} alt="CareRelay QR code" />
 ```
 
-## Planned Endpoints
-
 ### POST `/api/brief`
 
-Planned: generate a first-visit brief from patient data using a HuggingFace medical model.
+Generates a first-visit brief for the demo patient. If the request body is empty, the backend loads the default parsed Synthea patient. If Hugging Face is unavailable, the endpoint returns a deterministic fallback brief from structured patient data.
+
+Example:
+
+```bash
+curl -X POST http://127.0.0.1:5000/api/brief
+```
+
+Optional request body:
+
+```json
+{
+  "patientData": {
+    "patient": {},
+    "snapshot": {}
+  }
+}
+```
+
+Response sections:
+
+- `brief`: generated or fallback first-visit summary
+- `source`: `huggingface` or `fallback`
+- `model`: Hugging Face model name when configured
+- `warning`: null when Hugging Face succeeds, otherwise a fallback reason
+
+## Planned Endpoints
 
 ### POST `/api/ner`
 

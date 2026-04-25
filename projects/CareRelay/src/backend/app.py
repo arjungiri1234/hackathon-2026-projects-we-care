@@ -4,6 +4,7 @@ import io
 import qrcode
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from ai_brief import generate_brief
 from drug_check import check_interactions
 from fhir_utils import load_patient
 
@@ -23,7 +24,9 @@ def get_patient(patient_id):
 
 @app.route("/api/brief", methods=["POST"])
 def get_brief():
-    return jsonify({"message": "brief endpoint ready"})
+    request_data = request.get_json(silent=True) or {}
+    patient_data = request_data.get("patientData") or request_data or load_patient("default")
+    return jsonify(generate_brief(patient_data))
 
 
 @app.route("/api/drugs/interactions")
