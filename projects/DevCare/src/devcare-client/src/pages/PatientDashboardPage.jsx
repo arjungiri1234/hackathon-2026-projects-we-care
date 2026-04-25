@@ -11,6 +11,15 @@ const ROLE_KEY = 'devcare_role'
 
 function PatientDashboardPage() {
   const username = localStorage.getItem('devcare_username')
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
+    localStorage.removeItem(USERNAME_KEY)
+    localStorage.removeItem(ROLE_KEY)
+    navigate('/login')
+  }
 
   return (
     <div className="flex min-h-screen bg-[var(--color-bg)]">
