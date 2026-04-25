@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { loginSchema, type LoginForm } from '../types/auth'
 
+type FormErrors = { email?: string; password?: string }
+
 export default function LoginPage() {
   const [form, setForm] = useState<LoginForm>({ email: '', password: '' })
-  const [errors, setErrors] = useState<Partial<LoginForm>>({})
+  const [errors, setErrors] = useState<FormErrors>({})
   const [loading, setLoading] = useState(false)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -11,30 +13,37 @@ export default function LoginPage() {
     setErrors((prev) => ({ ...prev, [e.target.name]: undefined }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
     const result = loginSchema.safeParse(form)
     if (!result.success) {
-      const fieldErrors: Partial<LoginForm> = {}
+      const fieldErrors: FormErrors = {}
       result.error.issues.forEach((issue) => {
-        const field = issue.path[0] as keyof LoginForm
+        const field = issue.path[0] as keyof FormErrors
         fieldErrors[field] = issue.message
       })
       setErrors(fieldErrors)
       return
     }
     setLoading(true)
-    // TODO: wire to auth API
-    setLoading(false)
+    try {
+      // TODO: wire to auth API
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-8">
+
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-2xl">🏥</span>
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="28" height="28" rx="6" fill="#2563EB" />
+              <path d="M14 7v14M7 14h14" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
             <span className="text-2xl font-bold text-[#0F172A] tracking-tight">RefAI</span>
           </div>
           <p className="text-sm text-[#64748B]">Secure Clinician Portal</p>
@@ -86,9 +95,9 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-10 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-60 text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors"
+            className="w-full h-10 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-60 text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
-            {loading ? 'Signing in…' : 'Sign In →'}
+            {loading ? 'Signing in…' : <>Sign In <span>→]</span></>}
           </button>
         </form>
 
