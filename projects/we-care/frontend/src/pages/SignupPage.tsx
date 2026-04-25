@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { Button } from '../components/ui/Button'
 import { FormInput } from '../components/ui/FormInput'
@@ -7,7 +8,7 @@ import { Logo } from '../components/ui/Logo'
 const signupSchema = z
   .object({
     fullName: z.string().min(2, 'Full name is required'),
-    email: z.string().email('Invalid email address'),
+    email: z.email('Invalid email address'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string(),
   })
@@ -19,11 +20,8 @@ const signupSchema = z
 type SignupForm = z.infer<typeof signupSchema>
 type FormErrors = Partial<Record<keyof SignupForm, string>>
 
-interface SignupPageProps {
-  onNavigateToLogin?: () => void
-}
-
-export default function SignupPage({ onNavigateToLogin }: SignupPageProps) {
+export default function SignupPage() {
+  const navigate = useNavigate()
   const [form, setForm] = useState<SignupForm>({
     fullName: '',
     email: '',
@@ -124,7 +122,7 @@ export default function SignupPage({ onNavigateToLogin }: SignupPageProps) {
         <div className="mt-6 border-t border-border pt-5 text-center">
           <p className="text-sm text-muted">
             Already have an account?{' '}
-            <Button variant="text" type="button" className="text-sm font-medium" onClick={onNavigateToLogin}>
+            <Button variant="text" type="button" className="text-sm font-medium" onClick={() => navigate('/login')}>
               Sign in
             </Button>
           </p>

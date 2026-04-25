@@ -1,11 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { Button } from '../components/ui/Button'
 import { FormInput } from '../components/ui/FormInput'
 import { Logo } from '../components/ui/Logo'
 
 const forgotSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.email('Invalid email address'),
 })
 
 type ForgotForm = z.infer<typeof forgotSchema>
@@ -13,11 +14,8 @@ type FormErrors = Partial<Record<keyof ForgotForm, string>>
 
 type Step = 'form' | 'sent'
 
-interface ForgotPasswordPageProps {
-  onNavigateToLogin?: () => void
-}
-
-export default function ForgotPasswordPage({ onNavigateToLogin }: ForgotPasswordPageProps) {
+export default function ForgotPasswordPage() {
+  const navigate = useNavigate()
   const [form, setForm] = useState<ForgotForm>({ email: '' })
   const [errors, setErrors] = useState<FormErrors>({})
   const [loading, setLoading] = useState(false)
@@ -98,7 +96,7 @@ export default function ForgotPasswordPage({ onNavigateToLogin }: ForgotPassword
               A reset link was sent to <span className="font-medium text-primary">{form.email}</span>.
               Check your inbox and follow the instructions.
             </p>
-            <Button type="button" fullWidth onClick={onNavigateToLogin}>
+            <Button type="button" fullWidth onClick={() => navigate('/login')}>
               Back to Sign In
             </Button>
           </div>
@@ -108,7 +106,7 @@ export default function ForgotPasswordPage({ onNavigateToLogin }: ForgotPassword
           <div className="mt-6 border-t border-border pt-5 text-center">
             <p className="text-sm text-muted">
               Remember your password?{' '}
-              <Button variant="text" type="button" className="text-sm font-medium" onClick={onNavigateToLogin}>
+              <Button variant="text" type="button" className="text-sm font-medium" onClick={() => navigate('/login')}>
                 Sign in
               </Button>
             </p>
