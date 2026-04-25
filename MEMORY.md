@@ -6,7 +6,8 @@ Persistent project context for agents. Update as decisions are made or change.
 
 ## Project Identity
 
-- **Team:** we-care
+- **Project:** RefAI — AI Referral Management Portal
+- **Team:** We Care (Arjun Giri, Anil)
 - **Event:** CareDevi AI Innovation Hackathon 2026
 - **Hard cutoff:** Sunday April 26, 2026 at 4:00 PM CDT — no extensions
 - **Working directory:** `projects/we-care/`
@@ -23,7 +24,7 @@ Persistent project context for agents. Update as decisions are made or change.
 | Data fetching | Axios + TanStack Query | — |
 | Backend | Node.js + TypeScript | — |
 | Database + Auth | Supabase (PostgreSQL) | — |
-| AI | Google Gemini API | — |
+| AI | Google Gemini API | Free tier, strong structured extraction |
 | Design tooling | Claude, Google Stitch | — |
 | Containerization | Docker | — |
 
@@ -51,18 +52,15 @@ _Log significant architectural choices here as they are made._
 
 _Track unresolved decisions here. Remove when resolved._
 
-- Problem statement not yet finalized
 - Demo format (live vs recorded) not decided
 
 ---
 
 ## Completed Milestones
 
-_Move items here when done._
-
-- [ ] Problem statement defined
-- [ ] `projects/we-care/README.md` created
-- [ ] `projects/we-care/responsible-ai.md` created
+- [x] Problem statement defined — AI referral management portal (RefAI)
+- [x] `projects/we-care/README.md` created
+- [x] `projects/we-care/responsible-ai.md` created
 - [ ] Frontend scaffolded
 - [ ] Backend scaffolded
 - [ ] Docker setup complete

@@ -63,14 +63,14 @@ Supabase (referral records, specialist profiles, status tracking)
    - `GEMINI_API_KEY`
 3. Install frontend dependencies:
    ```
-   cd src/frontend && npm install
+   cd frontend && npm install
    ```
 4. Install backend dependencies:
    ```
-   cd src/backend && npm install
+   cd backend && npm install
    ```
-5. Run backend: `npm run dev` inside `src/backend`
-6. Run frontend: `npm run dev` inside `src/frontend`
+5. Run backend: `npm run dev` inside `backend`
+6. Run frontend: `npm run dev` inside `frontend`
 
 ---
 

@@ -5,7 +5,7 @@ Guidance for AI agents (any framework) working in this repository.
 ## Project Context
 
 CareDevi AI Innovation Hackathon 2026 — team project **we-care**.  
-Goal: build an AI-driven healthcare solution.  
+Product: **RefAI** — AI-powered referral management portal.  
 Hard cutoff: **Sunday April 26, 2026 at 4:00 PM CDT**. No extensions.
 
 ## Working Directory
