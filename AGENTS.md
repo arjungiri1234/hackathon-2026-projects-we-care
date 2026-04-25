@@ -77,11 +77,10 @@ DRY applies to everything — components, pages, hooks, validators, API calls, c
 
 ## Commit Guidelines
 
-- Conventional Commits format (`feat:`, `fix:`, `chore:`, etc.)
-- Micro-commits per logical change, even within one file
-- Commit in small code changes if possible small chunk of code from file
-- try not to commit multiple files in single commit
-- Short subject lines — no filler
-- Commit history is scored; commit early and often
-- Do not add `Co-Authored-By:` AI attribution to commits
-- write meaningful commit
+- Use Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`
+- One reason per commit. If you edited a file for two separate reasons, that is two commits
+- Moving or renaming a file is its own commit — never mix a move with a content change
+- Never bundle unrelated changes into one commit even if they touch the same file
+- Subject line must describe the specific change — no vague messages like "update file" or "fix stuff"
+- No `Co-Authored-By:` AI attribution
+- Commit after every completed task, not at the end of a session
