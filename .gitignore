@@ -1,0 +1,12 @@
+# environment file
+.env
+
+# macOS metadata
+.DS_Store
+
+# IDE Settings (the trailing slash indicates that all the subfolders inside .vscode to be ignored too)
+.vscode/ 
+
+__pycache__/
+
+chroma_store/
