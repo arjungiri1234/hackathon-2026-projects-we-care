@@ -55,7 +55,7 @@ CREATE TABLE referrals (
 CREATE TABLE referral_status_history (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   referral_id UUID NOT NULL REFERENCES referrals(id) ON DELETE CASCADE,
-  status      TEXT NOT NULL,
+  status      TEXT NOT NULL CHECK (status IN ('pending', 'sent', 'accepted', 'completed')),
   changed_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -69,9 +69,10 @@ CREATE TABLE patient_tokens (
 );
 
 -- Appointments (patient books via portal after receiving referral link)
+-- One appointment per referral enforced by UNIQUE constraint
 CREATE TABLE appointments (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  referral_id    UUID NOT NULL REFERENCES referrals(id) ON DELETE CASCADE,
+  referral_id    UUID NOT NULL UNIQUE REFERENCES referrals(id) ON DELETE CASCADE,
   preferred_date DATE NOT NULL,
   time_slot      TEXT NOT NULL CHECK (time_slot IN ('morning', 'afternoon', 'evening')),
   status         TEXT CHECK (status IN ('requested', 'confirmed', 'cancelled')) DEFAULT 'requested',
@@ -136,3 +137,13 @@ CREATE TRIGGER referrals_log_status
 CREATE TRIGGER appointments_sync_referral
   AFTER INSERT OR UPDATE ON appointments
   FOR EACH ROW EXECUTE FUNCTION sync_referral_on_appointment();
+
+-- ============================================================
+-- Indexes
+-- ============================================================
+
+CREATE INDEX idx_referrals_doctor_id   ON referrals (doctor_id);
+CREATE INDEX idx_referrals_patient_id  ON referrals (patient_id);
+CREATE INDEX idx_referrals_status      ON referrals (status);
+CREATE INDEX idx_status_history_referral ON referral_status_history (referral_id);
+CREATE INDEX idx_patient_tokens_referral ON patient_tokens (referral_id);
