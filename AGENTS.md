@@ -25,6 +25,7 @@ projects/we-care/
 
 | Layer         | Technology                                                           |
 | ------------- | -------------------------------------------------------------------- |
+| Package manager | pnpm                                                              |
 | Frontend      | Vite, React, TypeScript, TailwindCSS, Zustand, Axios, TanStack Query |
 | Backend       | Node.js, TypeScript                                                  |
 | Database      | Supabase (PostgreSQL + Auth)                                         |
