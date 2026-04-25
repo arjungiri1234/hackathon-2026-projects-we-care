@@ -23,15 +23,15 @@ projects/we-care/
 
 ## Tech Stack
 
-| Layer         | Technology                                                           |
-| ------------- | -------------------------------------------------------------------- |
-| Package manager | pnpm                                                              |
-| Frontend      | Vite, React, TypeScript, TailwindCSS, Zustand, Axios, TanStack Query |
-| Backend       | Node.js, TypeScript                                                  |
-| Database      | Supabase (PostgreSQL + Auth)                                         |
-| AI            | Google Gemini API                                                    |
-| Design        | Claude, Google Stitch                                                |
-| Orchestration | Docker                                                               |
+| Layer           | Technology                                                           |
+| --------------- | -------------------------------------------------------------------- |
+| Package manager | pnpm                                                                 |
+| Frontend        | Vite, React, TypeScript, TailwindCSS, Zustand, Axios, TanStack Query |
+| Backend         | Node.js, TypeScript                                                  |
+| Database        | Supabase (PostgreSQL + Auth)                                         |
+| AI              | Google Gemini API                                                    |
+| Design          | Claude, Google Stitch                                                |
+| Orchestration   | Docker                                                               |
 
 ## Required Deliverables
 
@@ -66,6 +66,11 @@ For every feature or change:
 - SOLID principles; separate logic from UI components
 - Follow test-driven development
 - Do not commit `.env` files or secrets
+- Do not use deprecated code
+- Write Dry code
+- use tailwind provided class instead of custom
+- create reusable components
+- write test cases for logics and verify
 
 ## Commit Guidelines
 
