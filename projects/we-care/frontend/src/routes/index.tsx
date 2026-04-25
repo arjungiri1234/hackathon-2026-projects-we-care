@@ -10,18 +10,30 @@ import {
   PatientPortalPage,
   NotFoundPage,
 } from '../pages/placeholders'
+import { ProtectedRoute } from './ProtectedRoute'
+import { GuestRoute } from './GuestRoute'
 
 export const router = createBrowserRouter([
-  // Auth
-  { path: '/login', element: <LoginPage /> },
-  { path: '/signup', element: <SignupPage /> },
-  { path: '/forgot-password', element: <ForgotPasswordPage /> },
+  // Auth — redirect to / if already logged in
+  {
+    element: <GuestRoute />,
+    children: [
+      { path: '/login', element: <LoginPage /> },
+      { path: '/signup', element: <SignupPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+    ],
+  },
 
-  // Doctor portal
-  { path: '/', element: <DashboardPage /> },
-  { path: '/referrals/new', element: <NewReferralPage /> },
-  { path: '/referrals/:id', element: <ReferralDetailPage /> },
-  { path: '/specialists', element: <SpecialistsPage /> },
+  // Doctor portal — redirect to /login if not authenticated
+  {
+    element: <ProtectedRoute />,
+    children: [
+      { path: '/', element: <DashboardPage /> },
+      { path: '/referrals/new', element: <NewReferralPage /> },
+      { path: '/referrals/:id', element: <ReferralDetailPage /> },
+      { path: '/specialists', element: <SpecialistsPage /> },
+    ],
+  },
 
   // Patient portal — token-gated, no auth
   { path: '/p/:token', element: <PatientPortalPage /> },
