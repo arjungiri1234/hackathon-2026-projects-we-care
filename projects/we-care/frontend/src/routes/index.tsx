@@ -4,6 +4,7 @@ import DashboardPage from "../pages/DashboardPage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import LoginPage from "../pages/LoginPage";
 import NewReferralPage from "../pages/NewReferralPage";
+import PatientBookingConfirmationPage from "../pages/PatientBookingConfirmationPage";
 import PatientBookingPage from "../pages/PatientBookingPage";
 import PatientBookingReviewPage from "../pages/PatientBookingReviewPage";
 import PatientPortalPage from "../pages/PatientPortalPage";
@@ -47,9 +48,14 @@ export const router = createBrowserRouter([
   { path: "/p/:token", element: <PatientPortalPage /> },
   { path: "/p/:token/book", element: <PatientBookingPage /> },
   { path: "/p/:token/review", element: <PatientBookingReviewPage /> },
+  { path: "/p/:token/confirmed", element: <PatientBookingConfirmationPage /> },
   { path: "/patient/:token", element: <PatientPortalPage /> },
   { path: "/patient/:token/book", element: <PatientBookingPage /> },
   { path: "/patient/:token/review", element: <PatientBookingReviewPage /> },
+  {
+    path: "/patient/:token/confirmed",
+    element: <PatientBookingConfirmationPage />,
+  },
 
   // Fallback
   { path: "*", element: <NotFoundPage /> },

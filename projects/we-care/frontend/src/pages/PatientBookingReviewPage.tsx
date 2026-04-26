@@ -29,8 +29,8 @@ interface BookingReviewContent {
 }
 
 const REVIEW_CONTENT: BookingReviewContent = {
-  title: "Review Your Appointment",
-  subtitle: "Please confirm the details below.",
+  title: "Review Your Request",
+  subtitle: "Submit this request and wait for specialist approval.",
   doctor: {
     name: "Dr. Sarah Jenkins",
     specialty: "Cardiology",
@@ -60,7 +60,7 @@ const REVIEW_CONTENT: BookingReviewContent = {
     memberId: "XYZ123",
   },
   actions: {
-    confirmLabel: "Confirm Booking",
+    confirmLabel: "Submit Request",
     editLabel: "Edit Selection",
   },
 };
@@ -73,10 +73,12 @@ export default function PatientBookingReviewPage() {
   const portalBasePath = location.pathname.startsWith("/patient/")
     ? "/patient"
     : "/p";
-  const portalPath = token ? `${portalBasePath}/${token}` : portalBasePath;
   const bookingPath = token
     ? `${portalBasePath}/${token}/book`
     : `${portalBasePath}/book`;
+  const confirmationPath = token
+    ? `${portalBasePath}/${token}/confirmed`
+    : `${portalBasePath}/confirmed`;
 
   return (
     <div className="min-h-screen bg-[#eceef3]">
@@ -144,7 +146,7 @@ export default function PatientBookingReviewPage() {
                 fullWidth
                 size="lg"
                 className="rounded-lg tracking-wider uppercase"
-                onClick={() => navigate(portalPath)}
+                onClick={() => navigate(confirmationPath)}
               >
                 {REVIEW_CONTENT.actions.confirmLabel}
               </Button>

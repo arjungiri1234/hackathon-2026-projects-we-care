@@ -275,7 +275,7 @@ export default function PatientBookingPage() {
             size="md"
             onClick={() => navigate(reviewPath)}
           >
-            Confirm Booking
+            Review Request
           </Button>
         </div>
       </footer>

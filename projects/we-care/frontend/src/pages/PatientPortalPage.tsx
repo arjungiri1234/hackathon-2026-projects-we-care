@@ -18,21 +18,15 @@ const TIMELINE_STEPS: TimelineStep[] = [
     done: true,
   },
   {
-    id: "review",
-    title: "Review in Progress",
-    subtitle: "Cardiology Dept • Oct 14",
-    done: true,
-  },
-  {
     id: "ready",
-    title: "Ready to Book",
-    subtitle: "Please schedule your visit",
+    title: "Ready to Request",
+    subtitle: "Choose a slot and submit your request",
     current: true,
   },
   {
-    id: "appointment",
-    title: "Appointment",
-    subtitle: "Pending booking",
+    id: "confirmation",
+    title: "Specialist Confirmation",
+    subtitle: "Pending doctor approval",
   },
 ];
 
@@ -86,10 +80,14 @@ export default function PatientPortalPage() {
               Action Required
             </div>
             <h2 className="mt-3 text-3xl font-semibold text-primary">
-              Ready to Book
+              Ready to Request
             </h2>
             <p className="mt-1 text-sm text-muted">
               Referral #REF-{token?.slice(0, 5).toUpperCase() ?? "89241"}
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              After you request a slot, the specialist will approve or decline
+              it.
             </p>
           </section>
 
@@ -152,7 +150,7 @@ export default function PatientPortalPage() {
 
         <div className="border-t border-border bg-surface px-4 py-4">
           <Button fullWidth size="lg" onClick={() => navigate("book")}>
-            Book Appointment
+            Request Appointment
           </Button>
         </div>
       </div>
