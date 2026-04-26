@@ -94,6 +94,11 @@ export async function getDoctorProfile() {
   return data;
 }
 
+export async function getDoctorById(doctorId: string) {
+  const { data } = await api.get<DoctorProfile>(`/api/v1/doctors/${doctorId}`);
+  return data;
+}
+
 export async function getDoctorProfileLookups() {
   const { data } = await api.get<DoctorProfileLookups>(
     "/api/v1/doctors/lookups",

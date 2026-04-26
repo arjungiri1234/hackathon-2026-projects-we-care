@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "../components/layout/AppLayout";
 import DashboardPage from "../pages/DashboardPage";
+import DoctorProfilePage from "../pages/DoctorProfilePage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import LoginPage from "../pages/LoginPage";
 import NewReferralPage from "../pages/NewReferralPage";
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
           { path: "/referrals", element: <ReferralsPage /> },
           { path: "/referrals/new", element: <NewReferralPage /> },
           { path: "/referrals/:id", element: <ReferralDetailPage /> },
+          { path: "/doctors/:id", element: <DoctorProfilePage /> },
           { path: "/specialists", element: <SpecialistsPage /> },
           { path: "/profile", element: <SettingsPage /> },
           { path: "/settings", element: <SettingsPage /> },

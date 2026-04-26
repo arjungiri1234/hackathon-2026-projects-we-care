@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   forgotPassword,
+  getDoctorById,
   getDoctorProfile,
   getDoctorProfileLookups,
   RESET_PASSWORD_TOKEN_KEY,
@@ -45,6 +46,14 @@ export function useDoctorProfileQuery() {
     queryFn: getDoctorProfile,
     enabled: Boolean(token),
     retry: false,
+  })
+}
+
+export function useDoctorByIdQuery(doctorId: string) {
+  return useQuery({
+    queryKey: queryKeys.doctorById(doctorId),
+    queryFn: () => getDoctorById(doctorId),
+    enabled: Boolean(doctorId),
   })
 }
 

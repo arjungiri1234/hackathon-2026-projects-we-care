@@ -233,3 +233,7 @@ export async function getDoctorProfile(doctorId: string) {
 
   return await mapDoctorProfile(data as DoctorRow);
 }
+
+export async function getDoctorProfileById(doctorId: string) {
+  return await getDoctorProfile(doctorId);
+}

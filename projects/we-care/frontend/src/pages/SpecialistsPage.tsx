@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, Search, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { SpecialistTableRow } from '../components/specialists/SpecialistTableRow'
 import { getSpecialistsDirectory, type SpecialistsDirectoryItem } from '../lib/specialists-api'
 import { queryKeys } from '../lib/query-keys'
@@ -28,6 +29,7 @@ function mapDirectorySpecialist(clinician: SpecialistsDirectoryItem): DirectoryS
 }
 
 export default function SpecialistsPage() {
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [specialtyFilter, setSpecialtyFilter] = useState('')
   const [locationFilter, setLocationFilter] = useState('')
@@ -162,7 +164,11 @@ export default function SpecialistsPage() {
               </tr>
             ) : (
               visible.map((specialist) => (
-                <SpecialistTableRow key={specialist.id} specialist={specialist} onViewProfile={() => {}} />
+                <SpecialistTableRow
+                  key={specialist.id}
+                  specialist={specialist}
+                  onViewProfile={(doctorId) => navigate(`/doctors/${doctorId}`)}
+                />
               ))
             )}
           </tbody>
