@@ -22,7 +22,7 @@ const AVAILABILITY_OPTIONS: Array<{ label: string; value: AvailabilityStatus | '
   { label: 'In Surgery', value: 'in-surgery' },
 ]
 
-const selectCls = 'flex cursor-pointer appearance-none items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1'
+const selectCls = 'cursor-pointer appearance-none rounded-full border border-border bg-surface pl-4 pr-8 py-2 text-sm font-medium text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1'
 
 export default function SpecialistsPage() {
   const [specialtyFilter, setSpecialtyFilter] = useState('')
