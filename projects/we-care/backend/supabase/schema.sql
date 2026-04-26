@@ -31,17 +31,6 @@ CREATE TABLE doctors (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Specialists (pre-seeded, not auth users)
-CREATE TABLE specialists (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  full_name  TEXT NOT NULL,
-  specialty_id UUID NOT NULL REFERENCES specialties(id),
-  hospital_id UUID NOT NULL REFERENCES hospitals(id),
-  phone      TEXT,
-  available  BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
 -- Patients (created when referral is submitted)
 CREATE TABLE patients (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -60,7 +49,7 @@ CREATE TABLE referrals (
   id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   doctor_id          UUID NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
   patient_id         UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
-  specialist_id      UUID NOT NULL REFERENCES specialists(id) ON DELETE CASCADE,
+  specialist_id      UUID NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
   clinical_notes     TEXT NOT NULL,
   extracted_data     JSONB,
   diagnosis          TEXT,
@@ -167,8 +156,6 @@ CREATE INDEX idx_referrals_patient_id  ON referrals (patient_id);
 CREATE INDEX idx_referrals_status      ON referrals (status);
 CREATE INDEX idx_doctors_specialty_id  ON doctors (specialty_id);
 CREATE INDEX idx_doctors_hospital_id   ON doctors (hospital_id);
-CREATE INDEX idx_specialists_specialty_id ON specialists (specialty_id);
-CREATE INDEX idx_specialists_hospital_id  ON specialists (hospital_id);
 CREATE INDEX idx_status_history_referral ON referral_status_history (referral_id);
 CREATE INDEX idx_patient_tokens_referral ON patient_tokens (referral_id);
 
@@ -177,7 +164,6 @@ CREATE INDEX idx_patient_tokens_referral ON patient_tokens (referral_id);
 -- ============================================================
 
 ALTER TABLE doctors DISABLE ROW LEVEL SECURITY;
-ALTER TABLE specialists DISABLE ROW LEVEL SECURITY;
 ALTER TABLE specialties DISABLE ROW LEVEL SECURITY;
 ALTER TABLE hospitals DISABLE ROW LEVEL SECURITY;
 ALTER TABLE patients DISABLE ROW LEVEL SECURITY;

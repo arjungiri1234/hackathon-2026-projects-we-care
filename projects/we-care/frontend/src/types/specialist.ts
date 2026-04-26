@@ -11,14 +11,11 @@ export interface Specialist extends BaseSpecialist {
   available: boolean
 }
 
-export type AvailabilityStatus = 'available-now' | 'available-soon' | 'consulting' | 'in-surgery'
 export type ClinicianType = 'doctor' | 'specialist'
 
 export interface DirectorySpecialist extends BaseSpecialist {
   credentials: string
   specialty: string
   location: string
-  availabilityStatus: AvailabilityStatus
-  availabilityLabel: string
   clinicianType: ClinicianType
 }

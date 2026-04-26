@@ -6,7 +6,6 @@ export interface SpecialistsDirectoryItem {
   specialty: string
   hospital: string
   phone: string | null
-  available: boolean
   clinician_type: 'doctor' | 'specialist'
 }
 

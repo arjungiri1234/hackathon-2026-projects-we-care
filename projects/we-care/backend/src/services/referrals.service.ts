@@ -48,9 +48,10 @@ export async function getReferralsByDoctor(doctorId: string) {
       `
       id, clinical_notes, diagnosis, urgency, status, created_at,
       patients (id, full_name),
-      specialists (
+      specialist:doctors!referrals_specialist_id_fkey (
         id,
         full_name,
+        contact_number,
         specialties(name),
         hospitals(name)
       )
@@ -61,13 +62,13 @@ export async function getReferralsByDoctor(doctorId: string) {
 
   if (error) throw new Error(error.message);
   const mappedReferrals = data.map((referral) => {
-    const specialist = Array.isArray(referral.specialists)
-      ? referral.specialists[0]
-      : referral.specialists;
+    const specialist = Array.isArray(referral.specialist)
+      ? referral.specialist[0]
+      : referral.specialist;
 
     return {
       ...referral,
-      specialists: specialist
+      specialist: specialist
         ? {
             ...specialist,
             specialty: extractLookupName(specialist.specialties) ?? "",
@@ -87,7 +88,7 @@ export async function getReferralById(referralId: string, doctorId: string) {
       `
       *,
       patients (*),
-      specialists (
+      specialist:doctors!referrals_specialist_id_fkey (
         *,
         specialties(name),
         hospitals(name)
@@ -100,13 +101,13 @@ export async function getReferralById(referralId: string, doctorId: string) {
     .single();
 
   if (error) throw new Error(error.message);
-  const specialist = Array.isArray(data.specialists)
-    ? data.specialists[0]
-    : data.specialists;
+  const specialist = Array.isArray(data.specialist)
+    ? data.specialist[0]
+    : data.specialist;
 
   return {
     ...data,
-    specialists: specialist
+    specialist: specialist
       ? {
           ...specialist,
           specialty: extractLookupName(specialist.specialties) ?? "",

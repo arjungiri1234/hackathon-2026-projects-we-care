@@ -4,14 +4,9 @@ import { ChevronDown, Search, X } from 'lucide-react'
 import { SpecialistTableRow } from '../components/specialists/SpecialistTableRow'
 import { getSpecialistsDirectory, type SpecialistsDirectoryItem } from '../lib/specialists-api'
 import { queryKeys } from '../lib/query-keys'
-import type { DirectorySpecialist, AvailabilityStatus } from '../types/specialist'
+import type { DirectorySpecialist } from '../types/specialist'
 
-const COLUMNS = ['Specialist Name', 'Specialty', 'Location', 'Availability Status', 'Actions']
-
-const AVAILABILITY_OPTIONS: Array<{ label: string; value: AvailabilityStatus | '' }> = [
-  { label: 'All Availability', value: '' },
-  { label: 'Available Now', value: 'available-now' },
-]
+const COLUMNS = ['Specialist Name', 'Specialty', 'Location', 'Actions']
 
 const selectCls = 'cursor-pointer appearance-none rounded-full border border-border bg-surface pl-4 pr-8 py-2 text-sm font-medium text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1'
 
@@ -28,8 +23,6 @@ function mapDirectorySpecialist(clinician: SpecialistsDirectoryItem): DirectoryS
     credentials: clinician.clinician_type === 'doctor' ? 'Doctor' : 'Specialist',
     specialty: clinician.specialty || 'General',
     location: clinician.hospital || 'Unassigned',
-    availabilityStatus: clinician.available ? 'available-now' : 'consulting',
-    availabilityLabel: clinician.available ? 'Available Now' : 'Unavailable',
     clinicianType: clinician.clinician_type,
   }
 }
@@ -38,7 +31,6 @@ export default function SpecialistsPage() {
   const [search, setSearch] = useState('')
   const [specialtyFilter, setSpecialtyFilter] = useState('')
   const [locationFilter, setLocationFilter] = useState('')
-  const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityStatus | ''>('')
   const specialistsDirectoryQuery = useQuery({
     queryKey: queryKeys.specialistsDirectory,
     queryFn: getSpecialistsDirectory,
@@ -64,18 +56,16 @@ export default function SpecialistsPage() {
       if (search && !specialist.name.toLowerCase().includes(search.toLowerCase())) return false
       if (specialtyFilter && specialist.specialty !== specialtyFilter) return false
       if (locationFilter && specialist.location !== locationFilter) return false
-      if (availabilityFilter && specialist.availabilityStatus !== availabilityFilter) return false
       return true
     })
-  }, [availabilityFilter, locationFilter, search, specialists, specialtyFilter])
+  }, [locationFilter, search, specialists, specialtyFilter])
 
-  const hasActiveFilters = search !== '' || specialtyFilter !== '' || locationFilter !== '' || availabilityFilter !== ''
+  const hasActiveFilters = search !== '' || specialtyFilter !== '' || locationFilter !== ''
 
   function clearFilters() {
     setSearch('')
     setSpecialtyFilter('')
     setLocationFilter('')
-    setAvailabilityFilter('')
   }
 
   return (
@@ -112,17 +102,6 @@ export default function SpecialistsPage() {
             <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} className={selectCls}>
               <option value="">All Locations</option>
               {locations.map((location) => <option key={location} value={location}>{location}</option>)}
-            </select>
-            <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-          </div>
-
-          <div className="relative">
-            <select
-              value={availabilityFilter}
-              onChange={(event) => setAvailabilityFilter(event.target.value as AvailabilityStatus | '')}
-              className={selectCls}
-            >
-              {AVAILABILITY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
             <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
           </div>

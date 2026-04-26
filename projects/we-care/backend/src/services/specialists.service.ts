@@ -2,25 +2,22 @@ import { supabase } from "../lib/supabase";
 import { extractLookupName } from "./lookup-service";
 
 export async function getAvailableSpecialists(specialty?: string) {
-  let query = supabase
-    .from("specialists")
+  const { data, error } = await supabase
+    .from("doctors")
     .select(
-      "id, full_name, phone, available, specialties(name), hospitals(name)",
+      "id, full_name, contact_number, specialties(name), hospitals(name)",
     )
-    .eq("available", true)
     .order("full_name");
 
-  const { data, error } = await query;
   if (error) throw new Error(error.message);
 
   return data
-    .map((specialist) => ({
-      id: specialist.id,
-      full_name: specialist.full_name,
-      specialty: extractLookupName(specialist.specialties) ?? "",
-      hospital: extractLookupName(specialist.hospitals) ?? "",
-      phone: specialist.phone,
-      available: specialist.available,
+    .map((doctor) => ({
+      id: doctor.id,
+      full_name: doctor.full_name,
+      specialty: extractLookupName(doctor.specialties) ?? "",
+      hospital: extractLookupName(doctor.hospitals) ?? "",
+      phone: doctor.contact_number,
     }))
     .filter((specialist) => {
       if (!specialty) return true;

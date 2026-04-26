@@ -1,4 +1,3 @@
-import { AvailabilityBadge } from '../ui/AvailabilityBadge'
 import type { DirectorySpecialist } from '../../types/specialist'
 
 interface SpecialistTableRowProps {
@@ -22,9 +21,6 @@ export function SpecialistTableRow({ specialist, onViewProfile }: SpecialistTabl
       </td>
       <td className="px-5 py-4 text-sm text-primary">{specialist.specialty}</td>
       <td className="px-5 py-4 text-sm text-primary">{specialist.location}</td>
-      <td className="px-5 py-4">
-        <AvailabilityBadge status={specialist.availabilityStatus} label={specialist.availabilityLabel} />
-      </td>
       <td className="px-5 py-4 text-right">
         <button
           onClick={() => onViewProfile(specialist.id)}

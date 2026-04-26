@@ -1,5 +1,5 @@
 -- ============================================================
--- Seed Data — Specialists
+-- Seed Data — Specialty and hospital lookups
 -- Run this after schema.sql
 -- ============================================================
 
@@ -24,5 +24,4 @@ INSERT INTO hospitals (name, location) VALUES
   ('City Children Hospital', 'Riverfront'),
   ('Eye Care Clinic', 'Old Town')
 ON CONFLICT (name) DO NOTHING;
-
 

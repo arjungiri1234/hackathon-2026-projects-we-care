@@ -19,9 +19,9 @@ export async function getReferralByToken(token: string) {
       `
       id, diagnosis, urgency, status, clinical_notes, created_at,
       patients (full_name, date_of_birth, gender),
-      specialists (
+      specialist:doctors!referrals_specialist_id_fkey (
         full_name,
-        phone,
+        contact_number,
         specialties(name),
         hospitals(name)
       )
@@ -32,15 +32,16 @@ export async function getReferralByToken(token: string) {
 
   if (referralError) throw new Error(referralError.message);
 
-  const specialist = Array.isArray(referral.specialists)
-    ? referral.specialists[0]
-    : referral.specialists;
+  const specialist = Array.isArray(referral.specialist)
+    ? referral.specialist[0]
+    : referral.specialist;
 
   return {
     ...referral,
-    specialists: specialist
+    specialist: specialist
       ? {
           ...specialist,
+          phone: specialist.contact_number,
           specialty: extractLookupName(specialist.specialties) ?? "",
           hospital: extractLookupName(specialist.hospitals) ?? "",
         }
