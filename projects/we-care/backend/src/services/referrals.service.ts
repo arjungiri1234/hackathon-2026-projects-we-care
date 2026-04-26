@@ -97,7 +97,7 @@ export async function getReferralsByDoctor(
     .from("referrals")
     .select(
       `
-      id, clinical_notes, diagnosis, urgency, status, created_at, required_specialty,
+      id, doctor_id, referred_by, clinical_notes, diagnosis, urgency, status, created_at, required_specialty,
       patients (id, full_name),
       specialist:doctors!referrals_referred_by_fkey (
         id,
