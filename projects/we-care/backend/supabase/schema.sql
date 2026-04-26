@@ -171,3 +171,17 @@ CREATE INDEX idx_specialists_specialty_id ON specialists (specialty_id);
 CREATE INDEX idx_specialists_hospital_id  ON specialists (hospital_id);
 CREATE INDEX idx_status_history_referral ON referral_status_history (referral_id);
 CREATE INDEX idx_patient_tokens_referral ON patient_tokens (referral_id);
+
+-- ============================================================
+-- Supabase Security
+-- ============================================================
+
+ALTER TABLE doctors DISABLE ROW LEVEL SECURITY;
+ALTER TABLE specialists DISABLE ROW LEVEL SECURITY;
+ALTER TABLE specialties DISABLE ROW LEVEL SECURITY;
+ALTER TABLE hospitals DISABLE ROW LEVEL SECURITY;
+ALTER TABLE patients DISABLE ROW LEVEL SECURITY;
+ALTER TABLE referrals DISABLE ROW LEVEL SECURITY;
+ALTER TABLE referral_status_history DISABLE ROW LEVEL SECURITY;
+ALTER TABLE patient_tokens DISABLE ROW LEVEL SECURITY;
+ALTER TABLE appointments DISABLE ROW LEVEL SECURITY;
