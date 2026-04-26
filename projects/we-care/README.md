@@ -107,7 +107,9 @@ Schema: `backend/supabase/schema.sql`
    - `SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `GEMINI_API_KEY`
-     - `FRONTEND_URL` (e.g. `http://localhost:5173` for password reset redirects)
+   - `FRONTEND_URL` (e.g. `http://localhost:5173` for password reset redirects)
+   - `RESEND_API_KEY`
+   - `EMAIL_FROM`
 3. Run schema and seed against your Supabase project:
    ```
    backend/supabase/schema.sql
@@ -136,4 +138,4 @@ Schema: `backend/supabase/schema.sql`
 - Specialist availability is mocked — no real scheduling system integration
 - Not connected to real EHR systems — all patient data is synthetic
 - AI extraction quality depends on completeness of clinical notes
-- Email/SMS delivery uses a third-party service; not implemented in demo
+- Email delivery uses Resend when credentials are configured
