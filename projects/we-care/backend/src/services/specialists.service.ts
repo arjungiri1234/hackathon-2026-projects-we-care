@@ -46,26 +46,6 @@ export async function getAvailableSpecialists({
     })
     .filter((doctor) => {
       if (!normalizedSpecialty) return true;
-      return doctor.specialty.toLowerCase().includes(normalizedSpecialty);
-    });
-
-      return {
-        id: doctor.id,
-        full_name: doctor.full_name,
-        avatar_url: doctor.avatar_url ?? null,
-        specialty: specialtyName,
-        hospital: hospitalName,
-        location:
-          Array.isArray(doctor.hospitals)
-            ? (doctor.hospitals[0]?.location ?? "")
-            : (doctor.hospitals?.location ?? ""),
-        phone: doctor.contact_number ?? "",
-        available: true,
-        clinician_type: "doctor" as const,
-      };
-    })
-    .filter((doctor) => {
-      if (!normalizedSpecialty) return true;
       return doctor.specialty.toLowerCase() === normalizedSpecialty;
     });
 
