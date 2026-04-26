@@ -36,12 +36,18 @@ export const evaluateBicepCurl = (landmarks, state) => {
   
   // Track drifting elbow
   const elbowShoulderDist = Math.abs(elbow.x - shoulder.x);
-  if (elbowShoulderDist > 0.15) corrections.push("Keep elbow tucked closer to your body");
-  if (torsoAngle < 160) corrections.push("Stand up straight, don't lean forward");
+  if (elbowShoulderDist > 0.15) {
+    corrections.push({ feedback: "Keep elbow tucked closer", severity: "high", joint: "elbow" });
+  }
+  if (torsoAngle < 160) {
+    corrections.push({ feedback: "Don't lean forward", severity: "medium", joint: "back" });
+  }
 
   if (angle > 160) {
     newStage = "down";
-    if (angle > 175) corrections.push("Don't hyperextend your elbow");
+    if (angle > 175) {
+      corrections.push({ feedback: "Don't hyperextend elbow", severity: "high", joint: "elbow" });
+    }
   }
   
   if (angle < 45 && newStage === "down") {
@@ -83,8 +89,12 @@ export const evaluateSquat = (landmarks, state) => {
   let primaryFeedback = "Good form";
   let corrections = [];
 
-  if (backAngle < 90) corrections.push("Keep your chest up and back straight");
-  if (Math.abs(knee.x - ankle.x) > 0.2) corrections.push("Don't let knees cave in or bow out");
+  if (backAngle < 90) {
+    corrections.push({ feedback: "Keep chest up and back straight", severity: "high", joint: "back" });
+  }
+  if (Math.abs(knee.x - ankle.x) > 0.2) {
+    corrections.push({ feedback: "Don't let knees cave in", severity: "high", joint: "knee" });
+  }
 
   if (kneeAngle > 160) {
     newStage = "up";
@@ -96,7 +106,9 @@ export const evaluateSquat = (landmarks, state) => {
 
   if (kneeAngle > 100 && kneeAngle < 160) {
     primaryFeedback = newStage === "up" ? "Squatting down..." : "Standing up...";
-    if (newStage === "up" && kneeAngle > 110) corrections.push("Go lower for a full rep");
+    if (newStage === "up" && kneeAngle > 110) {
+      corrections.push({ feedback: "Go lower for a full rep", severity: "medium", joint: "knee" });
+    }
   }
 
   if (corrections.length > 0) primaryFeedback = "Needs correction";
@@ -125,7 +137,9 @@ export const evaluateShoulderRaise = (landmarks, state) => {
   let primaryFeedback = "Good form";
   let corrections = [];
 
-  if (armStraightness < 150) corrections.push("Keep your arms relatively straight");
+  if (armStraightness < 150) {
+    corrections.push({ feedback: "Keep your arms straight", severity: "medium", joint: "elbow" });
+  }
 
   if (angle < 30) {
     newStage = "down";
@@ -136,7 +150,7 @@ export const evaluateShoulderRaise = (landmarks, state) => {
   }
 
   if (angle > 95) {
-    corrections.push("Don't raise arms above shoulder level");
+    corrections.push({ feedback: "Don't raise arms too high", severity: "high", joint: "shoulder" });
   }
 
   if (angle > 30 && angle < 80) {
@@ -179,7 +193,9 @@ export const evaluateKneeExtension = (landmarks, state) => {
     if (newStage === "down") primaryFeedback = "Extending...";
     else primaryFeedback = "Lowering...";
     
-    if (newStage === "down" && angle > 130) corrections.push("Extend fully for maximum benefit");
+    if (newStage === "down" && angle > 130) {
+      corrections.push({ feedback: "Extend leg fully", severity: "medium", joint: "knee" });
+    }
   }
 
   if (corrections.length > 0) primaryFeedback = "Needs correction";
@@ -207,7 +223,9 @@ export const evaluateHipAbduction = (landmarks, state) => {
   let primaryFeedback = "Good form";
   let corrections = [];
 
-  if (torsoAngle < 150) corrections.push("Keep your torso straight, don't lean");
+  if (torsoAngle < 150) {
+    corrections.push({ feedback: "Keep torso straight, don't lean", severity: "high", joint: "back" });
+  }
 
   if (angle < 100) {
     newStage = "down";
