@@ -94,7 +94,11 @@ export default function PatientPortalPage() {
   }
 
   const firstName = referral.patients.full_name.split(" ")[0];
-  const specialist = referral.specialists;
+  const specialist = referral.specialist
+  const specialistName = specialist?.full_name ?? 'Unassigned'
+  const specialistSpecialty = specialist?.specialty ?? 'N/A'
+  const specialistHospital = specialist?.hospital ?? 'N/A'
+  const specialistPhone = specialist?.phone
   const timeline = getTimeline(referral.status, referral.created_at);
   const refId = referral.id.slice(0, 5).toUpperCase();
 
@@ -151,16 +155,16 @@ export default function PatientPortalPage() {
               Assigned Specialist
             </p>
             <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3">
-              <SpecialistAvatar name={specialist.full_name} />
+              <SpecialistAvatar name={specialistName} />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-lg font-semibold text-primary">{specialist.full_name}</p>
+                <p className="truncate text-lg font-semibold text-primary">{specialistName}</p>
                 <p className="truncate text-sm text-muted">
-                  {specialist.specialty} • {specialist.hospital}
+                  {specialistSpecialty} • {specialistHospital}
                 </p>
               </div>
-              {specialist.phone ? (
+              {specialistPhone ? (
                 <a
-                  href={`tel:${specialist.phone}`}
+                  href={`tel:${specialistPhone}`}
                   aria-label="Call specialist"
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
                 >
