@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Check, Copy, Link, Printer, Send } from 'lucide-react'
+import { ArrowLeft, Check, Copy, Link, Send } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AppointmentCard } from '../components/referrals/AppointmentCard'
@@ -99,7 +99,9 @@ export default function ReferralDetailPage() {
   })
 
   const patient = referral.patients
-  const specialist = referral.specialists
+  const specialist = referral.specialist
+  const specialistName = specialist?.full_name ?? 'Unassigned'
+  const specialistHospital = specialist?.hospital ?? 'N/A'
 
   const timeline = [...referral.referral_status_history]
     .sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime())
@@ -137,10 +139,6 @@ export default function ReferralDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm">
-            <Printer size={14} />
-            Print Referral
-          </Button>
           {referral.status === 'sent' && (
             <Button variant="ghost" size="sm" onClick={() => setPortalToken(portalToken)}>
               <Send size={14} />
@@ -212,9 +210,9 @@ export default function ReferralDetailPage() {
           <ReferralSummaryCard
             icdCode="N/A"
             diagnosis={referral.diagnosis ?? 'N/A'}
-            referredToName={specialist.full_name}
-            referredToInitials={toInitials(specialist.full_name)}
-            referredToOrg={specialist.hospital}
+            referredToName={specialistName}
+            referredToInitials={toInitials(specialistName)}
+            referredToOrg={specialistHospital}
             referredBy={doctor?.full_name ? `Dr. ${doctor.full_name}` : 'N/A'}
           />
           {referral.status === 'accepted' || referral.status === 'completed' ? (
@@ -224,7 +222,7 @@ export default function ReferralDetailPage() {
                 day: String(new Date().getDate()),
                 type: 'Initial Consultation',
                 time: 'TBD',
-                location: specialist.hospital,
+                location: specialistHospital,
               }}
             />
           ) : null}
