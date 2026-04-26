@@ -68,12 +68,14 @@ export function Appointments() {
     try {
       await createAppointment({
         ...newAppointment,
+        status: "PENDING",
         patientId: user?.patient?.id,
         endTime: new Date(new Date(newAppointment.startTime).getTime() + 30 * 60000).toISOString()
       }).unwrap()
       setIsDialogOpen(false)
       setNewAppointment({ doctorId: "", reason: "", startTime: "", endTime: "", isVirtual: true })
     } catch (error) {
+      console.error("Booking error:", error)
       alert("Failed to schedule appointment.")
     }
   }
