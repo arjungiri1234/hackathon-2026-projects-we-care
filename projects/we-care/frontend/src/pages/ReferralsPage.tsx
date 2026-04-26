@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { ReferralTable } from '../components/referrals/ReferralTable'
-import type { Referral } from '../types/referral'
+import type { Referral, ReferralStatus } from '../types/referral'
 
 const REFERRALS: Referral[] = [
   { id: '1', patient: 'Sarah Jenkins', diagnosis: 'Atypical chest pain', specialty: 'Cardiology', specialist: 'Dr. Robert Chen', urgency: 'HIGH', status: 'PENDING', date: 'Oct 24, 2023' },
@@ -17,6 +17,8 @@ const REFERRALS: Referral[] = [
 
 export default function ReferralsPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const initialFilter = (searchParams.get('filter') as ReferralStatus | null) ?? null
 
   return (
     <div className="space-y-5">
@@ -35,6 +37,7 @@ export default function ReferralsPage() {
         referrals={REFERRALS}
         total={1248}
         onView={(id) => navigate(`/referrals/${id}`)}
+        initialFilter={initialFilter}
       />
     </div>
   )

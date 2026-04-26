@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ReferralTableRow } from './ReferralTableRow'
 import type { Referral, ReferralStatus } from '../../types/referral'
 
@@ -30,10 +30,15 @@ interface ReferralTableProps {
   referrals: Referral[]
   total: number
   onView: (id: string) => void
+  initialFilter?: ReferralStatus | null
 }
 
-export function ReferralTable({ referrals, total, onView }: ReferralTableProps) {
-  const [activeFilter, setActiveFilter] = useState<ReferralStatus | null>(null)
+export function ReferralTable({ referrals, total, onView, initialFilter = null }: ReferralTableProps) {
+  const [activeFilter, setActiveFilter] = useState<ReferralStatus | null>(initialFilter)
+
+  useEffect(() => {
+    setActiveFilter(initialFilter ?? null)
+  }, [initialFilter])
 
   const visible = activeFilter ? referrals.filter((r) => r.status === activeFilter) : referrals
 
@@ -76,10 +81,7 @@ export function ReferralTable({ referrals, total, onView }: ReferralTableProps) 
           Showing 1–{visible.length} of {total.toLocaleString()} referrals
         </p>
         <div className="flex gap-2">
-          <button
-            disabled
-            className="rounded-lg border border-border px-4 py-1.5 text-xs font-medium text-muted disabled:opacity-40"
-          >
+          <button disabled className="rounded-lg border border-border px-4 py-1.5 text-xs font-medium text-muted disabled:opacity-40">
             Previous
           </button>
           <button className="rounded-lg border border-border px-4 py-1.5 text-xs font-medium text-primary hover:bg-base transition-colors">
