@@ -19,7 +19,7 @@ export async function getReferralByToken(token: string) {
       `
       id, diagnosis, urgency, status, clinical_notes, created_at,
       patients (full_name, date_of_birth, gender),
-      specialist:doctors!referrals_specialist_id_fkey (
+      specialist:doctors!referrals_referred_by_fkey (
         full_name,
         contact_number,
         specialties(name),
