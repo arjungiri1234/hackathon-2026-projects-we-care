@@ -1,4 +1,4 @@
-import { ChevronDown, UserCircle2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "../components/ui/Button";
 import { useProfileStore } from "../stores/profileStore";
@@ -68,7 +68,7 @@ export default function SettingsPage() {
         <div className="flex items-start gap-5 border-b border-border p-6">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition-colors overflow-hidden"
+            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-accent hover:opacity-90 transition-opacity overflow-hidden"
           >
             {avatarUrl ? (
               <img
@@ -77,7 +77,9 @@ export default function SettingsPage() {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <UserCircle2 size={40} className="text-slate-400" />
+              <span className="text-2xl font-semibold text-white">
+                {form.fullName?.[0] ?? "U"}
+              </span>
             )}
           </button>
           <input
