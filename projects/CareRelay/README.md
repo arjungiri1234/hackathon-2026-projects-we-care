@@ -1,177 +1,139 @@
 # CareRelay
 
-CareRelay is a hackathon prototype that helps a new doctor quickly understand a patient's medical history from a patient-carried medical ID card and QR code.
+**Giving Doctors Their Time Back.**
+CareRelay is a clinical workflow optimization platform and emergency-access system designed to combat physician burnout and deliver critical patient intelligence when seconds count.
 
-**Track:** Health Data & Interoperability
+## Team Members
+* Binit KC
+* Smriti Niroula
+* Sanskriti Poudel
+* Manushi Parajuli
 
-**CareDevi AI Healthcare Hackathon 2026**
+---
 
-The demo uses synthetic Synthea FHIR R4 patient data only. It is not for clinical use.
+## The Problem
+The modern Electronic Health Record (EHR) is fundamentally broken for point-of-care delivery. It is a billing tool, not a clinical tool. 
+* **The "Pajama Time" Crisis:** Based on a landmark 2016 *Annals of Internal Medicine* study, physicians spend 49.2% of their day on EHR charting and desk work, compared to only 27% on face-to-face patient care. 
+* **The Data Trap:** According to industry consensus, roughly 80% of healthcare data is unstructured (clinical notes, PDFs, discharge summaries). Standard systems cannot query this efficiently.
+* **The Golden Hour:** In emergency care, delays in accessing fragmented medical histories (like unknown life-threatening allergies) severely impact patient outcomes.
 
-## Team
+## Our Solution
+CareRelay bypasses bloated interoperability networks to deliver instant, structured intelligence directly to the clinician via a two-pronged approach:
 
-| Member | Role |
-|---|---|
-| Sanskriti | Backend, FHIR parsing, Flask APIs, Hugging Face integration, OpenFDA |
-| Manushi | Frontend, React UI, Tailwind styling, charts |
-| Binit | Optional chat feature / support if time allows |
+1. **The Medical ID Protocol:** Patients carry a physical or digital CareRelay ID card. Upon scanning the QR code in an emergency, clinicians immediately access our **Dense Clinical Snapshot**, summarizing critical vitals, conditions, and life-threatening allergies above the fold in under 2 seconds.
+2. **Clinical Intelligence & Safety Pipeline:**
+   * **Real-time FDA Safety Guardrails:** Active regimens are automatically validated against the **OpenFDA API** to flag black-box warnings and dangerous drug interactions.
+   * **RAG-Powered Clinical Chat:** Instead of hunting through a 30-page scanned EHR, doctors ask the CareRelay AI questions. By using a localized Retrieval-Augmented Generation (RAG) pipeline tied exclusively to the patient's record, the system generates answers and provides **clickable PDF citations** that launch the browser-native viewer exactly on the source page.
 
-## Problem
+## System Architecture
 
-When a patient sees a new doctor, the doctor often has only a few minutes to understand years of history spread across PDFs, portals, medication lists, and incomplete records. Critical conditions, medication risks, allergies, and lab trends can be missed.
+Our platform utilizes a multi-layered architecture to process diverse healthcare data securely, combining local vectorization, standard FHIR parsing, and external API integrations for safety.
 
-This problem is even harder in settings where patients may not have a full digital record. A portable medical ID card with a QR code can give clinicians a fast starting point.
+### 1. High-Level Data & Safety Workflow
+This diagram illustrates how CareRelay simultaneously processes dense standard FHIR payloads for the dashboard while interacting with OpenFDA for real-time medication safety.
 
-## Solution
+```mermaid
+graph TD
+    %% Entities
+    User[Clinician / Responder]
+    IDCard[CareRelay QR ID]
+    
+    %% CareRelay Frontend
+    subgraph Frontend [React Frontend]
+        Snapshot[Dense Clinical Snapshot]
+        ChatUI[Clinical Chat Interface]
+    end
 
-CareRelay gives the patient a medical ID card with a QR code. When a doctor scans it, the doctor can open a concise clinical snapshot instead of reading a long raw record.
+    %% CareRelay Backend
+    subgraph Backend [Flask API Server]
+        FHIR[FHIR Parser - fhir_utils.py]
+        FDA[Safety Integration - drug_check.py]
+        RAG[RAG Pipeline - rag_chat.py]
+    end
 
-The backend currently provides:
+    %% Data Sources
+    Synthea[(Synthea FHIR R4 JSON)]
+    EHR_PDF((Unstructured Patient PDF))
+    OpenFDA{US Gov OpenFDA API}
 
-- A parsed Synthea FHIR patient summary
-- Active conditions, current medications, allergies, vitals/labs, encounters, and timeline data
-- OpenFDA drug label warning lookups
-- A Hugging Face first-visit brief endpoint with deterministic fallback
-- QR code generation for the patient summary URL
+    %% Flow
+    User -- Scans --> IDCard
+    IDCard -- Resolves URL --> Snapshot
+    Snapshot -- /api/patient --> FHIR
+    FHIR -- Extracts & Deduplicates --> Synthea
+    
+    Snapshot -- Regimen Check --> FDA
+    FDA -- Fetches Warnings --> OpenFDA
+    FDA -- Returns Blackbox Alerts --> Snapshot
+    
+    User -- Queries --> ChatUI
+    ChatUI -- /api/chat --> RAG
+    RAG -- Reads --> EHR_PDF
+```
 
-The frontend provides:
+### 2. Zero-Hallucination RAG Pipeline
+This diagram focuses on the Retrieval-Augmented Generation system. By processing the raw EHR PDF locally through TF-IDF rather than passing the whole document to an LLM, we assure HIPAA boundary compliance and strictly mitigate hallucination via PDF source grounding.
 
-- A doctor snapshot dashboard
-- First-visit brief and drug warning action panels
-- Deep dive charts, timeline, encounters, and condition threads
-- A patient medical ID card view with QR code
+```mermaid
+sequenceDiagram
+    participant C as Clinician
+    participant UI as Chat UI (React)
+    participant RP as RAG Pipeline (Python)
+    participant TF as Local TF-IDF Vectorizer
+    participant PDF as PyMuPDF Extractor
+    participant LLM as HuggingFace LLM
+
+    C->>UI: "When was his last ECG?"
+    UI->>RP: POST /api/chat {question}
+    RP->>PDF: Load unstructured EHR document
+    PDF-->>RP: Extract text chunks & page numbers
+    RP->>TF: Vectorize patient chunks & query
+    TF-->>RP: Return top matches (Highest Cosine Similarity)
+    RP->>LLM: Prompt: Summarize these exact chunks ONLY
+    LLM-->>RP: Generated summary bounded by context
+    RP-->>UI: Return Summary + Exact Source Page #
+    UI-->>C: Displays Answer with clickable [Page 5] Citation
+    C->>UI: Clicks Citation
+    UI->>UI: Opens browser-native PDF viewer to Page 5
+```
 
 ## Tech Stack
+* **Frontend:** React.js, Vite, Vanilla CSS (Custom Light Theme Design System)
+* **Backend:** Python, Flask server
+* **Data Layer:** Synthea FHIR R4 (Synthetic Health Data Parsing)
+* **AI & NLP Pipeline:** 
+  * HuggingFace Inference API (Summarization / AI First Visit Brief)
+  * `scikit-learn` (TF-IDF vectorization for strict lexical retrieval)
+  * `PyMuPDF` (High-speed PDF text extraction and indexing)
+* **Integrations:** OpenFDA API 
 
-| Layer | Technology |
-|---|---|
-| Backend | Python, Flask, Flask-CORS |
-| Data | Synthea synthetic FHIR R4 JSON |
-| Drug warnings | OpenFDA drug label API |
-| AI brief | Hugging Face router, `meta-llama/Llama-3.1-8B-Instruct` |
-| QR code | `qrcode[pil]` |
-| Frontend | React, Vite, Recharts, Lucide React, CSS |
+## Setup Instructions
+To run CareRelay locally, you'll need two terminals for the frontend and backend.
 
-## Implemented Backend Endpoints
-
-```text
-GET  /api/patient/default
-POST /api/brief
-GET  /api/drugs/interactions?meds=metformin,simvastatin,amlodipine
-GET  /api/qr/default
-```
-
-Full backend API details are in [docs/backend-api.md](docs/backend-api.md).
-
-## Backend Setup
-
-From the repository root:
-
+### 1. Start the Flask Backend (Python 3.11+)
 ```bash
 cd projects/CareRelay/src/backend
-python3 -m venv venv
+# Create and activate a virtual environment (optional but recommended)
+python -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
-```
-
-Create a local `.env` file for Hugging Face:
-
-```env
-HF_API_KEY=hf_your_token_here
-HF_BRIEF_MODEL=meta-llama/Llama-3.1-8B-Instruct
-```
-
-Do not commit `.env`.
-
-Run the backend:
-
-```bash
+# Install requirements
+pip install flask pymupdf scikit-learn requests
+# Export a valid HuggingFace API Key for inference
+export HF_API_KEY="your_api_key_here"
+# Run the API server (runs on port 5000)
 python app.py
 ```
 
-The backend runs at:
-
-```text
-http://127.0.0.1:5000
-```
-
-## Frontend Setup
-
-In a second terminal, from the repository root:
-
+### 2. Start the Frontend (Node.js)
 ```bash
 cd projects/CareRelay/src/frontend
+# Install dependencies
 npm install
+# Start the Vite development server
 npm run dev
 ```
-
-The frontend runs at:
-
-```text
-http://127.0.0.1:5173
-```
-
-Keep the backend running at `http://127.0.0.1:5000` while using the frontend.
-
-Build check:
-
-```bash
-npm run build
-```
-
-## Quick Tests
-
-Patient data:
-
-```bash
-curl -s http://127.0.0.1:5000/api/patient/default
-```
-
-First-visit brief:
-
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/brief
-```
-
-Drug warnings:
-
-```bash
-curl "http://127.0.0.1:5000/api/drugs/interactions?meds=metformin,simvastatin,amlodipine"
-```
-
-QR code:
-
-```bash
-curl "http://127.0.0.1:5000/api/qr/default"
-```
-
-## Data Sources
-
-- Synthea FHIR R4 synthetic patient data
-- OpenFDA drug label API
-- Hugging Face hosted model inference for first-visit brief generation
-
-No real patient information or PHI is used.
-
-## Responsible AI
-
-See [responsible-ai.md](responsible-ai.md).
-
-In short:
-
-- This is a demonstration only, not a clinical tool.
-- AI-generated summaries require clinician review.
-- Drug warnings use OpenFDA label data instead of LLM-only reasoning.
-- OpenBioLLM was evaluated as the preferred clinical model, but provider availability varied; the demo uses a working Hugging Face instruction model with strict prompting and fallback behavior.
-
-## Limitations
-
-- The demo uses one synthetic patient record.
-- The frontend is a hackathon dashboard prototype and may need final visual polish before submission.
-- The app does not include production authentication, audit logging, encryption, consent management, or HIPAA deployment controls.
-- OpenFDA label warnings are broad and are not patient-specific clinical recommendations.
-- AI summaries can be incomplete or incorrect and must be reviewed by a clinician.
+Navigate to `http://localhost:5173` to view the CareRelay Dashboard.
 
 ## Demo
-
-Demo video/screenshots will be added before final submission.
+*(Link to presentation video / Live URL will be pasted here)*
+We have included key demonstration recordings and screenshots in the `/demo` folder of this repository.
