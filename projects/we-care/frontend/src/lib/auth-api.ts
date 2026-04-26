@@ -7,6 +7,10 @@ export interface DoctorProfile {
   id: string;
   email: string;
   full_name: string;
+  specialty?: string | null;
+  license_number?: string | null;
+  hospital?: string | null;
+  avatar_url?: string | null;
   created_at?: string;
 }
 
@@ -23,6 +27,14 @@ interface SignUpPayload {
 interface SignInPayload {
   email: string;
   password: string;
+}
+
+export interface UpdateDoctorProfilePayload {
+  full_name?: string;
+  email?: string;
+  specialty?: string;
+  license_number?: string;
+  hospital?: string;
 }
 
 export async function signIn(payload: SignInPayload) {
@@ -68,6 +80,32 @@ export async function resetPassword(accessToken: string, newPassword: string) {
 
 export async function signOut() {
   await api.post("/api/v1/auth/signout");
+}
+
+export async function getDoctorProfile() {
+  const { data } = await api.get<DoctorProfile>("/api/v1/doctors/profile");
+  return data;
+}
+
+export async function updateDoctorProfile(payload: UpdateDoctorProfilePayload) {
+  const { data } = await api.patch<DoctorProfile>(
+    "/api/v1/doctors/profile",
+    payload,
+  );
+
+  return data;
+}
+
+export async function uploadDoctorAvatar(file: File) {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const { data } = await api.post<{ avatar_url: string }>(
+    "/api/v1/doctors/profile/avatar",
+    formData,
+  );
+
+  return data;
 }
 
 export function getApiErrorMessage(error: unknown, fallback: string) {
