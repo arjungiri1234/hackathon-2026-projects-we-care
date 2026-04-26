@@ -4,7 +4,8 @@ import { z } from "zod";
 import { Button } from "../components/ui/Button";
 import { FormInput } from "../components/ui/FormInput";
 import { Logo } from "../components/ui/Logo";
-import { forgotPassword, getApiErrorMessage } from "../lib/auth-api";
+import { useForgotPasswordMutation } from "../lib/auth-hooks";
+import { getApiErrorMessage } from "../lib/auth-api";
 
 const forgotSchema = z.object({
   email: z.email("Invalid email address"),
@@ -20,8 +21,8 @@ export default function ForgotPasswordPage() {
   const [form, setForm] = useState<ForgotForm>({ email: "" });
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<Step>("form");
+  const forgotPasswordMutation = useForgotPasswordMutation()
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -41,9 +42,8 @@ export default function ForgotPasswordPage() {
       setErrors(fieldErrors);
       return;
     }
-    setLoading(true);
     try {
-      await forgotPassword(form.email);
+      await forgotPasswordMutation.mutateAsync(form.email);
       setStep("sent");
     } catch (error) {
       setSubmitError(
@@ -52,8 +52,6 @@ export default function ForgotPasswordPage() {
           "Unable to send reset link. Please try again.",
         ),
       );
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -95,7 +93,7 @@ export default function ForgotPasswordPage() {
                 error={errors.email}
               />
 
-              <Button type="submit" fullWidth loading={loading}>
+              <Button type="submit" fullWidth loading={forgotPasswordMutation.isPending}>
                 Send Reset Link
               </Button>
             </form>

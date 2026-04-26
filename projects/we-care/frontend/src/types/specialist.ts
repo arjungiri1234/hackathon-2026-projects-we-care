@@ -12,6 +12,7 @@ export interface Specialist extends BaseSpecialist {
 }
 
 export type AvailabilityStatus = 'available-now' | 'available-soon' | 'consulting' | 'in-surgery'
+export type ClinicianType = 'doctor' | 'specialist'
 
 export interface DirectorySpecialist extends BaseSpecialist {
   credentials: string
@@ -19,4 +20,5 @@ export interface DirectorySpecialist extends BaseSpecialist {
   location: string
   availabilityStatus: AvailabilityStatus
   availabilityLabel: string
+  clinicianType: ClinicianType
 }

@@ -3,9 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { FormInput } from "../components/ui/FormInput";
 import { Logo } from "../components/ui/Logo";
-import { getApiErrorMessage, signIn } from "../lib/auth-api";
-import { useAuthStore } from "../stores/authStore";
-import { useProfileStore } from "../stores/profileStore";
+import { useSignInMutation } from "../lib/auth-hooks";
+import { getApiErrorMessage } from "../lib/auth-api";
 import { loginSchema, type LoginForm } from "../types/auth";
 
 type FormErrors = { email?: string; password?: string };
@@ -15,10 +14,7 @@ export default function LoginPage() {
   const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const setAuth = useAuthStore((s) => s.setAuth);
-  const setInitialized = useAuthStore((s) => s.setInitialized);
-  const hydrateFromDoctor = useProfileStore((s) => s.hydrateFromDoctor);
+  const signInMutation = useSignInMutation()
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -38,19 +34,13 @@ export default function LoginPage() {
       setErrors(fieldErrors);
       return;
     }
-    setLoading(true);
     try {
-      const data = await signIn(form);
-      setAuth(data.accessToken, data.doctor);
-      hydrateFromDoctor(data.doctor);
-      setInitialized();
+      await signInMutation.mutateAsync(form);
       navigate("/", { replace: true });
     } catch (error) {
       setSubmitError(
         getApiErrorMessage(error, "Unable to sign in. Please try again."),
       );
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -105,7 +95,7 @@ export default function LoginPage() {
             }
           />
 
-          <Button type="submit" fullWidth loading={loading}>
+          <Button type="submit" fullWidth loading={signInMutation.isPending}>
             Sign In
           </Button>
         </form>

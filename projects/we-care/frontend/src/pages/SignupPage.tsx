@@ -4,9 +4,8 @@ import { z } from "zod";
 import { Button } from "../components/ui/Button";
 import { FormInput } from "../components/ui/FormInput";
 import { Logo } from "../components/ui/Logo";
-import { getApiErrorMessage, signIn, signUp } from "../lib/auth-api";
-import { useAuthStore } from "../stores/authStore";
-import { useProfileStore } from "../stores/profileStore";
+import { useSignInMutation, useSignUpMutation } from "../lib/auth-hooks";
+import { getApiErrorMessage } from "../lib/auth-api";
 
 const signupSchema = z
   .object({
@@ -33,10 +32,8 @@ export default function SignupPage() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const setAuth = useAuthStore((s) => s.setAuth);
-  const setInitialized = useAuthStore((s) => s.setInitialized);
-  const hydrateFromDoctor = useProfileStore((s) => s.hydrateFromDoctor);
+  const signUpMutation = useSignUpMutation()
+  const signInMutation = useSignInMutation()
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -56,18 +53,17 @@ export default function SignupPage() {
       setErrors(fieldErrors);
       return;
     }
-    setLoading(true);
     try {
-      await signUp({
+      await signUpMutation.mutateAsync({
         full_name: form.fullName,
         email: form.email,
         password: form.password,
       });
 
-      const data = await signIn({ email: form.email, password: form.password });
-      setAuth(data.accessToken, data.doctor);
-      hydrateFromDoctor(data.doctor);
-      setInitialized();
+      await signInMutation.mutateAsync({
+        email: form.email,
+        password: form.password,
+      });
       navigate("/", { replace: true });
     } catch (error) {
       setSubmitError(
@@ -76,8 +72,6 @@ export default function SignupPage() {
           "Unable to create account. Please try again.",
         ),
       );
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -144,7 +138,11 @@ export default function SignupPage() {
             error={errors.confirmPassword}
           />
 
-          <Button type="submit" fullWidth loading={loading}>
+          <Button
+            type="submit"
+            fullWidth
+            loading={signUpMutation.isPending || signInMutation.isPending}
+          >
             Create Account
           </Button>
         </form>

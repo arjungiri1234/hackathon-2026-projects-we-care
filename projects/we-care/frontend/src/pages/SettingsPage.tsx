@@ -2,14 +2,12 @@ import { ChevronDown } from "lucide-react";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { StatusToast } from "../components/ui/StatusToast";
 import { Button } from "../components/ui/Button";
+import { getApiErrorMessage } from "../lib/auth-api";
 import {
-  getDoctorProfile,
-  getDoctorProfileLookups,
-  getApiErrorMessage,
-  updateDoctorProfile,
-  uploadDoctorAvatar,
-} from "../lib/auth-api";
-import { useAuthStore } from "../stores/authStore";
+  useDoctorProfileLookupsQuery,
+  useUpdateDoctorProfileMutation,
+  useUploadDoctorAvatarMutation,
+} from "../lib/auth-hooks";
 import { useProfileStore } from "../stores/profileStore";
 
 const ALLOWED_AVATAR_MIME_TYPES = new Set([
@@ -62,7 +60,6 @@ export default function SettingsPage() {
     avatarUrl: storedAvatar,
     setProfile,
   } = useProfileStore();
-  const setDoctor = useAuthStore((s) => s.setDoctor);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(storedAvatar);
   const [form, setForm] = useState<ProfileForm>({
     fullName: storedName,
@@ -72,13 +69,11 @@ export default function SettingsPage() {
     specialty: storedSpecialty,
     hospital: storedHospital,
   });
-  const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isLoadingLookups, setIsLoadingLookups] = useState(true);
   const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(null);
-  const [specialtyOptions, setSpecialtyOptions] = useState<string[]>([]);
-  const [hospitalOptions, setHospitalOptions] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const doctorLookupsQuery = useDoctorProfileLookupsQuery()
+  const updateDoctorProfileMutation = useUpdateDoctorProfileMutation()
+  const uploadDoctorAvatarMutation = useUploadDoctorAvatarMutation()
 
   useEffect(() => {
     setAvatarUrl(storedAvatar);
@@ -101,62 +96,16 @@ export default function SettingsPage() {
   ]);
 
   useEffect(() => {
-    let isMounted = true;
+    if (!doctorLookupsQuery.error) return
 
-    async function loadLookups() {
-      setIsLoadingLookups(true);
-      setStatusMessage(null);
-
-      try {
-        const lookups = await getDoctorProfileLookups();
-        if (!isMounted) {
-          return;
-        }
-
-        setSpecialtyOptions(lookups.specialties);
-        setHospitalOptions(lookups.hospitals);
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        setStatusMessage({
-          message: getApiErrorMessage(
-            error,
-            "Unable to load profile options. Please refresh and try again.",
-          ),
-          tone: "error",
-        });
-      } finally {
-        if (isMounted) {
-          setIsLoadingLookups(false);
-        }
-      }
-    }
-
-    void loadLookups();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  async function syncProfileFromBackend(successMessage: string) {
-    const refreshedDoctor = await getDoctorProfile();
-
-    setDoctor(refreshedDoctor);
-    setProfile({
-      fullName: refreshedDoctor.full_name,
-      email: refreshedDoctor.email,
-      contactNumber: refreshedDoctor.contact_number ?? "",
-      specialty: refreshedDoctor.specialty ?? "",
-      licenseNumber: refreshedDoctor.license_number ?? "",
-      hospital: refreshedDoctor.hospital ?? "",
-      avatarUrl: refreshedDoctor.avatar_url ?? null,
-    });
-    setAvatarUrl(refreshedDoctor.avatar_url ?? null);
-    setStatusMessage({ message: successMessage, tone: "success" });
-  }
+    setStatusMessage({
+      message: getApiErrorMessage(
+        doctorLookupsQuery.error,
+        "Unable to load profile options. Please refresh and try again.",
+      ),
+      tone: "error",
+    })
+  }, [doctorLookupsQuery.error])
 
   function update(field: keyof ProfileForm, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -188,11 +137,10 @@ export default function SettingsPage() {
     }
 
     setStatusMessage(null);
-    setIsUploadingImage(true);
-
     try {
-      await uploadDoctorAvatar(file);
-      await syncProfileFromBackend("Profile image updated successfully.");
+      await uploadDoctorAvatarMutation.mutateAsync(file);
+      setAvatarUrl(useProfileStore.getState().avatarUrl);
+      setStatusMessage({ message: "Profile image updated successfully.", tone: "success" });
     } catch (error) {
       setStatusMessage({
         message: getApiErrorMessage(
@@ -201,10 +149,8 @@ export default function SettingsPage() {
         ),
         tone: "error",
       });
-    } finally {
-      setIsUploadingImage(false);
-      e.target.value = "";
     }
+    e.target.value = "";
   }
 
   async function handleSave() {
@@ -216,10 +162,8 @@ export default function SettingsPage() {
       return;
     }
 
-    setIsSaving(true);
-
     try {
-      const updatedDoctor = await updateDoctorProfile({
+      const updatedDoctor = await updateDoctorProfileMutation.mutateAsync({
         full_name: form.fullName.trim(),
         email: form.email.trim().toLowerCase(),
         contact_number: form.contactNumber.trim(),
@@ -228,7 +172,6 @@ export default function SettingsPage() {
         hospital: form.hospital.trim(),
       });
 
-      setDoctor(updatedDoctor);
       setProfile({
         fullName: updatedDoctor.full_name,
         email: updatedDoctor.email,
@@ -251,10 +194,14 @@ export default function SettingsPage() {
         ),
         tone: "error",
       });
-    } finally {
-      setIsSaving(false);
     }
   }
+
+  const specialtyOptions = doctorLookupsQuery.data?.specialties ?? []
+  const hospitalOptions = doctorLookupsQuery.data?.hospitals ?? []
+  const isLoadingLookups = doctorLookupsQuery.isLoading
+  const isSaving = updateDoctorProfileMutation.isPending
+  const isUploadingImage = uploadDoctorAvatarMutation.isPending
 
   const inputCls =
     "w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-primary placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1";

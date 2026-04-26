@@ -1,14 +1,11 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { Button } from "../components/ui/Button";
 import { FormInput } from "../components/ui/FormInput";
 import { Logo } from "../components/ui/Logo";
-import {
-  getApiErrorMessage,
-  RESET_PASSWORD_TOKEN_KEY,
-  resetPassword,
-} from "../lib/auth-api";
+import { useRecoveryToken, useResetPasswordMutation } from "../lib/auth-hooks";
+import { getApiErrorMessage } from "../lib/auth-api";
 
 const resetSchema = z
   .object({
@@ -24,17 +21,6 @@ type ResetForm = z.infer<typeof resetSchema>;
 type FormErrors = Partial<Record<keyof ResetForm, string>>;
 type Step = "form" | "success";
 
-function readRecoveryToken() {
-  const hashParams = new URLSearchParams(window.location.hash.replace("#", ""));
-  const hashToken = hashParams.get("access_token");
-  const queryToken = new URLSearchParams(window.location.search).get(
-    "access_token",
-  );
-  const storedToken = sessionStorage.getItem(RESET_PASSWORD_TOKEN_KEY);
-
-  return hashToken ?? queryToken ?? storedToken;
-}
-
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState<ResetForm>({
@@ -43,10 +29,9 @@ export default function ResetPasswordPage() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<Step>("form");
-
-  const recoveryToken = useMemo(readRecoveryToken, []);
+  const recoveryToken = useRecoveryToken()
+  const resetPasswordMutation = useResetPasswordMutation()
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -75,10 +60,11 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    setLoading(true);
     try {
-      await resetPassword(recoveryToken, form.password);
-      sessionStorage.removeItem(RESET_PASSWORD_TOKEN_KEY);
+      await resetPasswordMutation.mutateAsync({
+        accessToken: recoveryToken,
+        newPassword: form.password,
+      });
       setStep("success");
     } catch (error) {
       setSubmitError(
@@ -87,8 +73,6 @@ export default function ResetPasswordPage() {
           "Unable to reset password. Please request a new reset link.",
         ),
       );
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -145,7 +129,7 @@ export default function ResetPasswordPage() {
             <Button
               type="submit"
               fullWidth
-              loading={loading}
+              loading={resetPasswordMutation.isPending}
               disabled={!recoveryToken}
             >
               Update Password

@@ -1,8 +1,6 @@
 import { LogOut } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { signOut } from "../../lib/auth-api";
-import { useAuthStore } from "../../stores/authStore";
-import { useProfileStore } from "../../stores/profileStore";
+import { useSignOutMutation } from "../../lib/auth-hooks";
 
 interface NavTab {
   label: string;
@@ -19,8 +17,7 @@ export function Topbar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
-  const clearAuth = useAuthStore((s) => s.clearAuth);
-  const resetProfile = useProfileStore((s) => s.resetProfile);
+  const signOutMutation = useSignOutMutation()
 
   const activeType = searchParams.get("type");
 
@@ -30,10 +27,8 @@ export function Topbar() {
 
   async function handleLogout() {
     try {
-      await signOut();
+      await signOutMutation.mutateAsync();
     } finally {
-      clearAuth();
-      resetProfile();
       navigate("/login", { replace: true });
     }
   }
