@@ -1,119 +1,102 @@
 import streamlit as st
-import sys
-import os
 import json
-
-# --- PATH CONFIGURATION ---
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from core.triage import triage, get_remedies_for_condition, get_next_steps
-from db.db import save_session
-from integrations.fhir_builder import build_diagnostic_report
+import pandas as pd
+from db.db import save_diagnostic_report, get_recent_sessions
 
 def show():
-    st.title("📋 Your Triage Results")
+    patient_id = st.session_state.get('patient_id')
 
-    if "diagnosis" not in st.session_state or not st.session_state.diagnosis:
-        st.error("No data found.")
-        return
+    # --- FIX: AUTO-LOAD PREVIOUS RECORD IF STATE IS EMPTY ---
+    if not st.session_state.get('diagnosis'):
+        if patient_id:
+            recent = get_recent_sessions(patient_id, limit=1)
+            if recent:
+                # Silently load the latest record into the session state
+                entry = recent[0]
+                st.session_state.diagnosis = json.loads(entry['diagnosis'])
+                st.session_state.session_id = entry['id']
+                st.session_state.severity = entry['risk_tier']
+                st.session_state.current_symptoms = entry['symptoms']
+            else:
+                st.warning("Please run the symptom checker first.")
+                if st.button("Go Back"):
+                    st.session_state.current_page = "Symptoms"
+                    st.rerun()
+                return
+        else:
+            st.error("Please log in to view results.")
+            return
 
+    # 1. Get diagnosis data (either fresh from AI or auto-loaded from DB)
     diag = st.session_state.diagnosis
-    sev = st.session_state.get("severity", "low")
-    conf = diag.get("confidence_score", 0)
+    risk = diag.get('risk_tier', 'LOW').upper()
+    session_id = st.session_state.get('session_id')
 
-    # 1. Triage Decision
-    risk_tier = triage(conf, sev)
-    
-    # 2. Risk Banner
-    if risk_tier == "HIGH":
-        st.error("🚨 HIGH RISK — EMERGENCY")
-    elif risk_tier == "MEDIUM":
-        st.warning("⚠️ MEDIUM RISK — SEE DOCTOR")
-    elif risk_tier == "LOW":
-        st.success("✅ LOW RISK — HOME CARE")
+    # 2. Display Urgent Banner
+    if risk == "HIGH":
+        st.error("🚨 **EMERGENCY: Please seek immediate medical attention.**")
+    elif risk == "MEDIUM":
+        st.warning("⚠️ **MEDIUM: Follow-up with a healthcare provider soon.**")
     else:
-        st.info("❓ UNCERTAIN ASSESSMENT")
+        st.success("✅ **LOW RISK: Manage symptoms at home and monitor.**")
 
-    # 3. Possible Conditions
-    st.subheader("Analysis")
-    for cond in diag.get("top_conditions", []):
-        st.progress(cond['probability']/100, text=f"{cond['name']} ({cond['probability']}%)")
+    st.title("📋 Diagnostic Report")
 
-    # 4. Next Steps
-    top_name = diag["top_conditions"][0]["name"] if diag.get("top_conditions") else ""
-    st.info(get_next_steps(risk_tier, top_name))
+    # --- STEP 4: FHIR HANDSHAKE ---
+    # This converts our AI output into a standard medical record
+    if patient_id and session_id:
+        with st.spinner("Generating FHIR R4 Record..."):
+            # Only one call needed here
+            fhir_data = save_diagnostic_report(patient_id, session_id, diag)
+            
+        with st.expander("📂 View FHIR R4 JSON (Interoperability)", expanded=False):
+            st.json(fhir_data)
 
-    # 5. Integration (FHIR & Database)
-    if not st.session_state.get("session_saved"):
-        p_id = st.session_state.get("user_profile", {}).get("id", "guest")
-        
-        # Build FHIR JSON
-        fhir_json = build_diagnostic_report(p_id, diag, risk_tier)
-        st.session_state.fhir_json = fhir_json
-        
-        # Save to SQLite
-        save_session(
-            patient_id=p_id,
-            symptoms=st.session_state.get("current_symptoms", ""),
-            diagnosis=diag,
-            risk=risk_tier
-        )
-        st.session_state.session_saved = True
+    # 3. Display AI Analysis
+    st.subheader("Summary")
+    st.write(diag.get('summary', 'Analysis provided by MedGemma.'))
 
-    # 6. FHIR Visualizer
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("### 🧬 Potential Conditions")
+        # Added safety get() to prevent crashes if top_conditions is missing
+        for cond in diag.get('top_conditions', []):
+            st.markdown(f"- **{cond['name']}** ({int(cond['probability']*100)}%)")
+            
+    with col2:
+        st.markdown("### 💊 Recommended Remedies")
+        for rem in diag.get('remedies', []):
+            st.markdown(f"- {rem}")
+
+    # --- RECENT MEDICAL HISTORY SECTION ---
     st.divider()
-    st.subheader("📋 Clinical Summary")
-
-    # Get the report data
-    report = st.session_state.get("fhir_json", {})
+    st.subheader("📜 Your Recent Medical History")
     
-    if report and "extension" in report:
-        # Extract the AI diagnosis data from the FHIR extension
-        # In your JSON, it is extension[0]['value']
-        diag_data = report['extension'][0]['value']
-        
-        # 1. Differential Diagnosis Table
-        st.markdown("**Differential Diagnosis**")
-        conditions = diag_data.get("top_conditions", [])
-        if conditions:
-            # Prepare data for st.table
-            table_rows = [
-                {"Condition": c['name'], "Match Probability": f"{c['probability']}%"} 
-                for c in conditions
-            ]
-            st.table(table_rows)
+    if patient_id:
+        recent_data = get_recent_sessions(patient_id, limit=3) 
+        if recent_data:
+            for i, entry in enumerate(recent_data):
+                try:
+                    past_diag = json.loads(entry['diagnosis'])
+                    date_val = entry['created_at'][:10]
+                    
+                    with st.expander(f"Visit Date: {date_val} | Risk: {entry['risk_tier']}"):
+                        st.write(f"**Symptoms:** {entry['symptoms']}")
+                        st.info(f"**Main Condition:** {past_diag.get('top_conditions', [{}])[0].get('name', 'N/A')}")
+                        
+                        # Unique key per button using the index 'i'
+                        if st.button(f"Reload This Report", key=f"reload_res_{i}"):
+                            st.session_state.diagnosis = past_diag
+                            st.session_state.session_id = entry['id']
+                            st.rerun()
+                except Exception: 
+                    continue
+        else:
+            st.info("No previous reports found.")
 
-        # 2. Care Plan & Precautions
-        col_left, col_right = st.columns(2)
-        
-        with col_left:
-            st.markdown("🏠 **Home Care & Remedies**")
-            for item in diag_data.get("remedies", []):
-                st.markdown(f"- {item}")
-                
-        with col_right:
-            st.markdown("⚠️ **Warning Signs**")
-            for warning in diag_data.get("warnings", []):
-                st.markdown(f"- {warning}")
-
-        # 3. Medical Sources
-        sources = diag_data.get("sources", [])
-        if sources:
-            st.caption(f"**Verified Sources:** {', '.join(sources)}")
-
-        # 4. Hidden Technical Proof (Keep this for the 15% judging score!)
-        with st.expander("🛠️ Developer: View Interoperable FHIR JSON"):
-            st.info("This JSON follows HL7 FHIR R4 standards for hospital integration.")
-            st.json(report)
-    else:
-        st.warning("Clinical report data is still processing.")
-
-    if st.button("New Assessment"):
-        st.session_state.diagnosis = None
-        st.session_state.session_saved = False
-        st.session_state.transcript = "" # Clear old text
-        st.session_state["current_page"] = "Symptom Checker" # Redirect back manually
+    st.divider()
+    if st.button("🏠 Return to Dashboard"):
+        # Reset current diagnosis so user can start fresh from dashboard if they want
+        st.session_state.diagnosis = None 
+        st.session_state.current_page = "Symptoms"
         st.rerun()
-
-if __name__ == "__main__":
-    show()
