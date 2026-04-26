@@ -8,3 +8,12 @@ dist/
 build/
 node_modules/
 coverage/
+.DS_Store
+*.log
+*.bak
+*.tmp
+*.cache
+.pnpm-store/
+*.tsbuildinfo
+*.eslintcache
+*.prettiercache
