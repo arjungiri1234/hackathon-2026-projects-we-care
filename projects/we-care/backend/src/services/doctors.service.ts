@@ -1,5 +1,5 @@
-import { supabase } from "../lib/supabase";
 import { HttpError } from "../lib/http-error";
+import { supabase } from "../lib/supabase";
 import {
   listLookupNames,
   normalizeLookupValue,
