@@ -49,6 +49,25 @@ function toInitials(name: string) {
   return name.replace(/^Dr\.\s*/i, '').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
 }
 
+function formatDate(value: string | null | undefined) {
+  if (!value) return 'N/A'
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function formatTimeSlot(timeSlot: 'morning' | 'afternoon' | 'evening') {
+  if (timeSlot === 'morning') return 'Morning'
+  if (timeSlot === 'afternoon') return 'Afternoon'
+  return 'Evening'
+}
+
 export default function ReferralDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -99,9 +118,8 @@ export default function ReferralDetailPage() {
   })
 
   const patient = referral.patients
-  const specialist = referral.specialist
-  const specialistName = specialist?.full_name ?? 'Unassigned'
-  const specialistHospital = specialist?.hospital ?? 'N/A'
+  const targetDoctor = referral.targetDoctor
+  const referredByDoctor = referral.referredByDoctor
 
   const timeline = [...referral.referral_status_history]
     .sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime())
@@ -196,7 +214,7 @@ export default function ReferralDetailPage() {
           <PatientInfoCard
             patient={{
               fullName: patient.full_name,
-              dob: patient.date_of_birth ?? 'N/A',
+              dob: formatDate(patient.date_of_birth),
               mrn: patient.mrn ?? 'N/A',
               contact: patient.phone ?? patient.email ?? 'N/A',
               insurance: 'N/A',
@@ -210,19 +228,19 @@ export default function ReferralDetailPage() {
           <ReferralSummaryCard
             icdCode="N/A"
             diagnosis={referral.diagnosis ?? 'N/A'}
-            referredToName={specialistName}
-            referredToInitials={toInitials(specialistName)}
-            referredToOrg={specialistHospital}
+            referredToName={specialist.full_name}
+            referredToInitials={toInitials(specialist.full_name)}
+            referredToOrg={specialist.hospital}
             referredBy={doctor?.full_name ? `Dr. ${doctor.full_name}` : 'N/A'}
           />
-          {referral.status === 'accepted' || referral.status === 'completed' ? (
+          {referral.appointment ? (
             <AppointmentCard
               appointment={{
-                month: new Date().toLocaleString('en-US', { month: 'short' }).toUpperCase(),
-                day: String(new Date().getDate()),
+                month: new Date(referral.appointment.preferred_date).toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+                day: new Date(referral.appointment.preferred_date).toLocaleString('en-US', { day: '2-digit' }),
                 type: 'Initial Consultation',
                 time: 'TBD',
-                location: specialistHospital,
+                location: specialist.hospital,
               }}
             />
           ) : null}

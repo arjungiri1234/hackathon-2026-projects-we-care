@@ -18,6 +18,19 @@ interface DoctorDirectoryRow {
   hospitals: { name: string } | Array<{ name: string }> | null;
 }
 
+interface AppointmentRow {
+  preferred_date: string;
+  time_slot: "morning" | "afternoon" | "evening";
+  status: "requested" | "confirmed" | "cancelled";
+  notes: string | null;
+}
+
+function generateMrn() {
+  const timestamp = Date.now().toString().slice(-8);
+  const suffix = randomUUID().replace(/-/g, "").slice(0, 4).toUpperCase();
+  return `MRN-${timestamp}-${suffix}`;
+}
+
 async function getDoctorsByIds(doctorIds: string[]) {
   if (!doctorIds.length) return new Map<string, {
     id: string;
@@ -51,6 +64,7 @@ async function getDoctorsByIds(doctorIds: string[]) {
 export async function createPatientAndReferral(
   doctorId: string,
   patientData: {
+    mrn?: string;
     full_name: string;
     date_of_birth?: string;
     gender?: string;
@@ -69,7 +83,10 @@ export async function createPatientAndReferral(
 ) {
   const { data: patient, error: patientError } = await supabase
     .from("patients")
-    .insert(patientData)
+    .insert({
+      ...patientData,
+      mrn: patientData.mrn?.trim() || generateMrn(),
+    })
     .select()
     .single();
 
@@ -168,20 +185,26 @@ export async function getReferralById(referralId: string, doctorId: string) {
         specialties(name),
         hospitals(name)
       ),
-      referral_status_history (status, changed_at)
+      referral_status_history (status, changed_at),
+      appointments (preferred_date, time_slot, status, notes)
     `,
     )
     .eq("id", referralId)
-    .eq("doctor_id", doctorId)
+    .or(`doctor_id.eq.${doctorId},referred_by.eq.${doctorId}`)
     .single();
 
   if (error) throw new Error(error.message);
-  const doctorMap = await getDoctorsByIds([data.doctor_id]);
+  const doctorMap = await getDoctorsByIds([data.doctor_id, data.referred_by]);
   const targetDoctor = doctorMap.get(data.doctor_id) ?? null;
+  const referredByDoctor = doctorMap.get(data.referred_by) ?? null;
+  const appointmentsRaw = data.appointments as AppointmentRow[] | AppointmentRow | null;
+  const appointment = Array.isArray(appointmentsRaw) ? (appointmentsRaw[0] ?? null) : appointmentsRaw;
 
   return {
     ...data,
     targetDoctor,
+    referredByDoctor,
+    appointment,
   };
 }
 
@@ -194,7 +217,7 @@ export async function updateReferralStatus(
     .from("referrals")
     .update({ status })
     .eq("id", referralId)
-    .eq("doctor_id", doctorId)
+    .or(`doctor_id.eq.${doctorId},referred_by.eq.${doctorId}`)
     .select()
     .single();
 

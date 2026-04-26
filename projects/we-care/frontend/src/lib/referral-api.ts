@@ -4,9 +4,12 @@ export interface ReferralDetail {
   id: string;
   clinical_notes: string;
   diagnosis: string | null;
+  required_specialty: string | null;
   urgency: 'low' | 'medium' | 'high';
   status: 'pending' | 'sent' | 'accepted' | 'completed';
   created_at: string;
+  referred_by: string;
+  doctor_id: string;
   patients: {
     full_name: string;
     date_of_birth: string | null;
@@ -14,10 +17,20 @@ export interface ReferralDetail {
     phone: string | null;
     email: string | null;
   };
-  specialist: {
+  targetDoctor: {
     full_name: string;
     specialty: string;
     hospital: string;
+  referredByDoctor: {
+    full_name: string;
+    specialty: string;
+    hospital: string;
+  } | null;
+  appointment: {
+    preferred_date: string;
+    time_slot: 'morning' | 'afternoon' | 'evening';
+    status: 'requested' | 'confirmed' | 'cancelled';
+    notes: string | null;
   } | null;
   referral_status_history: { status: string; changed_at: string }[];
 }
