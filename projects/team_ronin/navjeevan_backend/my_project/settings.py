@@ -36,7 +36,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    'user','visualisation'
+    'user','visualisation', 'event'
 ]
 
 DJANGO_APPS = [
