@@ -1,31 +1,24 @@
 import { supabase } from "../lib/supabase";
-import { extractLookupName } from "./lookup-service";
 
 export async function getAvailableSpecialists(specialty?: string) {
   let query = supabase
-    .from("specialists")
-    .select(
-      "id, full_name, phone, available, specialties(name), hospitals(name)",
-    )
-    .eq("available", true)
-    .order("full_name");
+    .from("specialties")
+    .select("id, name")
+    .order("name");
+
+  if (specialty) {
+    query = query.ilike("name", `%${specialty}%`) as typeof query;
+  }
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
 
-  return data
-    .map((specialist) => ({
-      id: specialist.id,
-      full_name: specialist.full_name,
-      specialty: extractLookupName(specialist.specialties) ?? "",
-      hospital: extractLookupName(specialist.hospitals) ?? "",
-      phone: specialist.phone,
-      available: specialist.available,
-    }))
-    .filter((specialist) => {
-      if (!specialty) return true;
-      return specialist.specialty
-        .toLowerCase()
-        .includes(specialty.toLowerCase());
-    });
+  return (data ?? []).map((s) => ({
+    id: s.id,
+    full_name: s.name,
+    specialty: s.name,
+    hospital: "",
+    phone: "",
+    available: true,
+  }));
 }
