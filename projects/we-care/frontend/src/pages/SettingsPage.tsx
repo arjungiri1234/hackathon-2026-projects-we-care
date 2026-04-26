@@ -151,7 +151,7 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-primary">Settings</h2>
+        <h2 className="text-2xl font-bold text-primary">Profile</h2>
         <p className="text-sm text-muted mt-1">
           Manage your professional profile.
         </p>
