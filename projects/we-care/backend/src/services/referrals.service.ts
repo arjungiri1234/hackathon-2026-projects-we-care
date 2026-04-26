@@ -1,7 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { randomUUID } from 'crypto';
 import { sendPatientPortalEmail } from './email.service';
-import { extractLookupName } from "./lookup-service";
 
 export async function createPatientAndReferral(
   doctorId: string,
@@ -14,7 +13,7 @@ export async function createPatientAndReferral(
     medical_history?: string;
   },
   referralData: {
-    specialist_id: string;
+    specialist_id?: string;
     clinical_notes: string;
     extracted_data?: object;
     diagnosis?: string;
@@ -46,38 +45,15 @@ export async function getReferralsByDoctor(doctorId: string) {
     .from("referrals")
     .select(
       `
-      id, clinical_notes, diagnosis, urgency, status, created_at,
-      patients (id, full_name),
-      specialists (
-        id,
-        full_name,
-        specialties(name),
-        hospitals(name)
-      )
+      id, clinical_notes, diagnosis, urgency, status, created_at, required_specialty,
+      patients (id, full_name)
     `,
     )
     .eq("doctor_id", doctorId)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  const mappedReferrals = data.map((referral) => {
-    const specialist = Array.isArray(referral.specialists)
-      ? referral.specialists[0]
-      : referral.specialists;
-
-    return {
-      ...referral,
-      specialists: specialist
-        ? {
-            ...specialist,
-            specialty: extractLookupName(specialist.specialties) ?? "",
-            hospital: extractLookupName(specialist.hospitals) ?? "",
-          }
-        : specialist,
-    };
-  });
-
-  return mappedReferrals;
+  return data;
 }
 
 export async function getReferralById(referralId: string, doctorId: string) {
@@ -87,11 +63,6 @@ export async function getReferralById(referralId: string, doctorId: string) {
       `
       *,
       patients (*),
-      specialists (
-        *,
-        specialties(name),
-        hospitals(name)
-      ),
       referral_status_history (status, changed_at)
     `,
     )
@@ -100,20 +71,7 @@ export async function getReferralById(referralId: string, doctorId: string) {
     .single();
 
   if (error) throw new Error(error.message);
-  const specialist = Array.isArray(data.specialists)
-    ? data.specialists[0]
-    : data.specialists;
-
-  return {
-    ...data,
-    specialists: specialist
-      ? {
-          ...specialist,
-          specialty: extractLookupName(specialist.specialties) ?? "",
-          hospital: extractLookupName(specialist.hospitals) ?? "",
-        }
-      : specialist,
-  };
+  return data;
 }
 
 export async function updateReferralStatus(
@@ -155,6 +113,8 @@ export async function updateReferralStatus(
       const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
       await sendPatientPortalEmail(patient.email, patient.full_name, `${frontendUrl}/p/${token}`);
     }
+
+    return { ...data, patient_token: token };
   }
 
   return data;
