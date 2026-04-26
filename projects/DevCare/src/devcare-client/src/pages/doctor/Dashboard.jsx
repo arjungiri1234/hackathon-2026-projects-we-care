@@ -19,6 +19,10 @@ function Dashboard() {
     { label: 'New Requests', val: '3', icon: PlusCircle, color: 'bg-orange-50 text-orange-600' },
   ]
 
+  const handleGenerateSuggestions = () => {
+    window.dispatchEvent(new CustomEvent('generate-suggestion'))
+  }
+
   return (
     <div className="animate-fade-in">
       <header className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -114,7 +118,10 @@ function Dashboard() {
              <p className="text-sm leading-relaxed opacity-80 font-medium">
                "Based on recent movement data, <strong>Charlie Davis</strong> is ready for advanced stability exercises. Consider adjusting his plan."
              </p>
-             <button className="mt-8 w-full py-4 rounded-2xl bg-white text-[var(--color-secondary)] font-bold text-sm hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+             <button 
+               onClick={handleGenerateSuggestions}
+               className="mt-8 w-full py-4 rounded-2xl bg-white text-[var(--color-secondary)] font-bold text-sm hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+             >
                 Generate Suggestions
                 <ArrowUpRight size={16} />
              </button>

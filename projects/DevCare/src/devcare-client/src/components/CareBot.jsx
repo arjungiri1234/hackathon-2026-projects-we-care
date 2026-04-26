@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
-import { MessageSquare, Sparkles, X, Send, ClipboardList, AlertCircle, Bot, Edit2, Trash2, Plus, ChevronDown, ChevronUp, Database, CheckCircle2 } from 'lucide-react'
+import { MessageSquare, Sparkles, X, Send, ClipboardList, AlertCircle, Bot, Edit2, Trash2, Plus, ChevronDown, ChevronUp, Database, CheckCircle2, RefreshCcw } from 'lucide-react'
 
 function CareBot() {
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [messages, setMessages] = useState([
-    { role: 'bot', content: "Hello Dr. Robert! I'm your Care Assistant. Need help generating a targeted rehab plan or a todo list for a patient?" }
+    { role: 'bot', content: "Hello! I'm your Care Assistant. Need help generating a targeted rehab plan or a todo list for a patient?" }
   ])
   const [isGenerating, setIsGenerating] = useState(false)
   const [expandedTasks, setExpandedTasks] = useState({})
-  const [showSyncUI, setShowSyncUI] = useState(null) // index of message being synced
+  const [showSyncUI, setShowSyncUI] = useState(null)
   const [patients, setPatients] = useState([])
   const [selectedPatient, setSelectedPatient] = useState('')
   const [planName, setPlanName] = useState('Week-1')
@@ -26,7 +26,18 @@ function CareBot() {
     if (isOpen) scrollToBottom()
   }, [messages, isOpen])
 
-  // Fetch patients when sync UI opens
+  // Integration: Listen for "generate-suggestion" events from the dashboard
+  useEffect(() => {
+    const handleOpenBot = () => setIsOpen(true)
+    window.addEventListener('open-care-bot', handleOpenBot)
+    window.addEventListener('generate-suggestion', handleOpenBot)
+    
+    return () => {
+      window.removeEventListener('open-care-bot', handleOpenBot)
+      window.removeEventListener('generate-suggestion', handleOpenBot)
+    }
+  }, [])
+
   useEffect(() => {
     if (showSyncUI !== null) {
       fetchPatients()
@@ -49,13 +60,16 @@ function CareBot() {
     }
   }
 
-  const handleSend = async () => {
-    if (!query.trim()) return
+  const handleSend = async (customQuery = null) => {
+    const activeQuery = customQuery || query
+    if (!activeQuery.trim()) return
 
-    const userQuery = query
-    const userMsg = { role: 'user', content: userQuery }
-    setMessages(prev => [...prev, userMsg])
-    setQuery('')
+    const userMsg = { role: 'user', content: activeQuery }
+    if (!customQuery) {
+      setMessages(prev => [...prev, userMsg])
+      setQuery('')
+    }
+    
     setIsGenerating(true)
 
     try {
@@ -76,7 +90,7 @@ function CareBot() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ query: userQuery })
+        body: JSON.stringify({ query: activeQuery })
       })
       
       if (res.status === 401) {
@@ -98,12 +112,31 @@ function CareBot() {
         return item
       })
 
-      const botMsg = { 
-        role: 'bot', 
-        content: data.content,
-        todoList: sanitizedTodoList
+      if (customQuery?.includes("ADD_ONE_MORE")) {
+        setMessages(prev => {
+          const newMessages = [...prev]
+          let lastBotIdx = -1
+          for (let k = newMessages.length - 1; k >= 0; k--) {
+            if (newMessages[k].role === 'bot' && newMessages[k].todoList) {
+              lastBotIdx = k
+              break
+            }
+          }
+          if (lastBotIdx !== -1) {
+            const lastMsg = { ...newMessages[lastBotIdx] }
+            lastMsg.todoList = [...(lastMsg.todoList || []), ...sanitizedTodoList]
+            newMessages[lastBotIdx] = lastMsg
+          }
+          return newMessages
+        })
+      } else {
+        const botMsg = { 
+          role: 'bot', 
+          content: data.content,
+          todoList: sanitizedTodoList
+        }
+        setMessages(prev => [...prev, botMsg])
       }
-      setMessages(prev => [...prev, botMsg])
     } catch (err) {
       console.error('CareBot Error:', err)
       setMessages(prev => [...prev, { 
@@ -115,6 +148,33 @@ function CareBot() {
     }
   }
 
+  const handleRegenerate = (msgIdx) => {
+    let originalUserQuery = ""
+    for (let k = msgIdx - 1; k >= 0; k--) {
+      if (messages[k].role === 'user') {
+        originalUserQuery = messages[k].content
+        break
+      }
+    }
+    if (originalUserQuery) {
+      setMessages(prev => prev.filter((_, idx) => idx !== msgIdx))
+      handleSend(originalUserQuery)
+    }
+  }
+
+  const handleAddMore = (msgIdx) => {
+    let originalUserQuery = ""
+    for (let k = msgIdx - 1; k >= 0; k--) {
+      if (messages[k].role === 'user') {
+        originalUserQuery = messages[k].content
+        break
+      }
+    }
+    if (originalUserQuery) {
+      handleSend(`BASED ON THIS PREVIOUS REQUEST: "${originalUserQuery}", PLEASE ADD_ONE_MORE DIFFERENT EXERCISE FROM THE DATABASE. RETURN ONLY THE NEW EXERCISE IN THE todoList.`)
+    }
+  }
+
   const handleSync = async (msgIdx) => {
     if (!selectedPatient) return
     setIsSyncing(true)
@@ -123,16 +183,16 @@ function CareBot() {
       const token = localStorage.getItem('devcare_access_token')
       const todoList = messages[msgIdx].todoList
       
-      // Parse exercises from todoList
       const exercises = todoList.map((item, index) => {
-        // Extract ID from metadata "ID:7 Name:..."
         const idMatch = item.metadata?.match(/ID:(\d+)/)
         const exerciseId = idMatch ? parseInt(idMatch[1]) : null
-        
+        const repsMatch = item.instruction?.match(/(\d+)\s+repetitions/)
+        const reps = repsMatch ? parseInt(repsMatch[1]) : 10
+
         return {
           exercise_id: exerciseId,
           order: index + 1,
-          target_reps: 10 // Default reps, can be parsed from instruction if needed
+          target_reps: reps
         }
       }).filter(ex => ex.exercise_id !== null)
 
@@ -250,13 +310,22 @@ function CareBot() {
                           <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest">
                              <ClipboardList size={12} /> Generated Todo List
                           </div>
-                          <button 
-                            onClick={() => addTask(i)}
-                            className="p-1 rounded-md hover:bg-blue-50 text-blue-600 transition-colors"
-                            title="Add Task"
-                          >
-                            <Plus size={14} />
-                          </button>
+                          <div className="flex gap-2">
+                             <button 
+                               onClick={() => handleAddMore(i)}
+                               className="p-1 rounded-md hover:bg-blue-50 text-blue-600 transition-colors flex items-center gap-1 text-[10px] font-bold"
+                               title="Add One More AI Suggestion"
+                             >
+                               <Plus size={14} /> Add AI Suggestion
+                             </button>
+                             <button 
+                               onClick={() => addTask(i)}
+                               className="p-1 rounded-md hover:bg-blue-50 text-blue-600 transition-colors"
+                               title="Add Task Manually"
+                             >
+                               <Plus size={14} />
+                             </button>
+                          </div>
                        </div>
                        
                        {msg.todoList.map((item, idx) => {
@@ -362,12 +431,20 @@ function CareBot() {
                                </div>
                              </div>
                            ) : (
-                             <button 
-                               onClick={() => setShowSyncUI(i)}
-                               className="w-full py-3 rounded-xl bg-[var(--color-primary)] text-white text-[12px] font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
-                             >
-                               <Bot size={16} /> Sync to Patient App
-                             </button>
+                             <div className="flex gap-2">
+                               <button 
+                                 onClick={() => handleRegenerate(i)}
+                                 className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 text-[12px] font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                               >
+                                 <RefreshCcw size={16} className={isGenerating ? "animate-spin" : ""} /> Regenerate
+                               </button>
+                               <button 
+                                 onClick={() => setShowSyncUI(i)}
+                                 className="flex-[2] py-3 rounded-xl bg-[var(--color-primary)] text-white text-[12px] font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                               >
+                                 <Bot size={16} /> Sync to Patient App
+                               </button>
+                             </div>
                            )}
                          </div>
                        )}
@@ -400,7 +477,7 @@ function CareBot() {
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               />
               <button 
-                onClick={handleSend}
+                onClick={() => handleSend()}
                 className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center rounded-xl bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] transition-all shadow-md"
               >
                 <Send size={18} />
@@ -416,13 +493,16 @@ function CareBot() {
       {/* Toggle Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className={`h-16 w-16 rounded-3xl flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 ${
+        className={`h-[72px] w-[72px] rounded-3xl flex flex-col items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 ${
           isOpen 
             ? 'bg-slate-900 text-white rotate-90' 
             : 'bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]'
         }`}
       >
-        {isOpen ? <X size={28} /> : <Bot size={28} />}
+        <div className="flex flex-col items-center gap-1">
+           {isOpen ? <X size={24} /> : <Bot size={24} />}
+           {!isOpen && <span className="text-[10px] font-black uppercase tracking-tighter">CareBot</span>}
+        </div>
         {!isOpen && (
           <div className="absolute -top-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-4 border-white animate-pulse"></div>
         )}
