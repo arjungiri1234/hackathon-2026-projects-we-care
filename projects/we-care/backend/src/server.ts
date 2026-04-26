@@ -21,6 +21,7 @@ app.use('/api/extract', extractRouter);
 app.use('/api/specialists', specialistsRouter);
 app.use('/api/referrals', referralsRouter);
 app.use('/api/patient', patientRouter);
+app.use('/api/v1/auth', authRouter);
 
 app.listen(PORT, () => {
   console.log(`RefAI backend running on port ${PORT}`);
