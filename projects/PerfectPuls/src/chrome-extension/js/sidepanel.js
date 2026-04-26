@@ -115,7 +115,7 @@ function displayResults() {
     const itemEl = document.createElement('div');
     itemEl.className = 'checklist-item';
     itemEl.innerHTML = `
-      <span class="status">${item.status.split(' ')[0]}</span>
+      <span class="status">${item.status}</span>
       <div class="content">
         <div class="item-title">${item.item}</div>
         <div class="item-details">${item.details}</div>
@@ -124,39 +124,17 @@ function displayResults() {
     checklistItems.appendChild(itemEl);
   });
 
-  // Feasibility
-  const feasibilityBadge = document.getElementById('feasibility-badge');
-  const feasibility = analysisResult.feasibility;
-  feasibilityBadge.className = `feasibility-badge ${feasibility.color.toLowerCase()}`;
-  feasibilityBadge.innerHTML = `
-    <div class="feasibility-score">${feasibility.score}</div>
-    <div class="feasibility-message">${feasibility.message}</div>
-  `;
+  // Hide feasibility card (not in simplified API)
+  const feasibilityCard = document.getElementById('feasibility-card');
+  if (feasibilityCard) {
+    feasibilityCard.style.display = 'none';
+  }
 
-  // Cost Breakdown
-  const costDetails = document.getElementById('cost-details');
-  const money = analysisResult.money_saved;
-  costDetails.innerHTML = `
-    <div class="cost-row">
-      <span>Session Cost:</span>
-      <span>${money.session_cost}</span>
-    </div>
-    <div class="cost-row">
-      <span>Your Cost:</span>
-      <span>${money.your_cost}</span>
-    </div>
-    <div class="cost-row">
-      <span>Insurance Pays:</span>
-      <span>${money.insurance_pays}</span>
-    </div>
-    <div class="cost-row highlight">
-      <span>You Save:</span>
-      <span>${money.savings_per_visit}</span>
-    </div>
-    <div class="annual-savings">
-      Potential annual savings: <strong>${money.potential_annual_savings}</strong>
-    </div>
-  `;
+  // Hide money saved card (not in simplified API)
+  const savingsCard = document.getElementById('savings-card');
+  if (savingsCard) {
+    savingsCard.style.display = 'none';
+  }
 
   // Benefit Details
   const benefitDetails = document.getElementById('benefit-details');
@@ -173,10 +151,6 @@ function displayResults() {
     <div class="benefit-row">
       <span class="label">Co-pay:</span>
       <span class="value">${benefits.copay}</span>
-    </div>
-    <div class="benefit-row renewal">
-      <span class="label">Renews:</span>
-      <span class="value">${benefits.renewal_date}</span>
     </div>
   `;
 

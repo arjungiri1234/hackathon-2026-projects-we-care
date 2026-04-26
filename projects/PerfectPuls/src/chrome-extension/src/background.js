@@ -43,39 +43,24 @@ function getDummyApiResponse(websiteData) {
     summary: `Analysis of ${siteName} shows potential insurance coverage for various health and wellness services. This provider offers services that may be partially or fully covered under different insurance plans.`,
     
     match_checklist: [
-      { item: "Provider is in-network with major insurers", status: "✅ covered", details: "Verified with Aetna, BCBS, UnitedHealth" },
-      { item: "Services qualify for HSA/FSA reimbursement", status: "⚠️ partial", details: "Physical therapy and medical massage covered" },
-      { item: "Prior authorization required", status: "📋 required", details: "Submit PA form 48 hours before appointment" },
-      { item: "Copay applies", status: "✅ covered", details: "$25 copay for in-network services" }
+      { item: "Provider is in-network with major insurers", status: "✅", details: "Verified with Aetna, BCBS, UnitedHealth" },
+      { item: "Services qualify for HSA/FSA reimbursement", status: "⚠️", details: "Physical therapy and medical massage covered" },
+      { item: "Prior authorization required", status: "📋", details: "Submit PA form 48 hours before appointment" },
+      { item: "Copay applies", status: "✅", details: "$25 copay for in-network services" }
     ],
-    
-    feasibility: {
-      score: 85,
-      color: "Green",
-      message: "High likelihood of coverage approval. Provider meets network requirements."
-    },
-    
-    money_saved: {
-      session_cost: "$150",
-      your_cost: "$25",
-      insurance_pays: "$125",
-      savings_per_visit: "$125",
-      potential_annual_savings: "$1,500"
-    },
     
     benefits_services: {
       service_name: "Physical Therapy & Wellness Services",
       coverage_type: "80% after deductible",
-      copay: "$25 per visit",
-      renewal_date: "January 1, 2027"
+      copay: "$25 per visit"
     },
 
     recommendations: [
-        "Based on the analysis, we recommend scheduling an appointment with this provider for your physical therapy needs. Ensure you submit the prior authorization form at least 48 hours before your visit to maximize insurance coverage."
-    ],
-    
-    // Include the scraped data for debugging
-    scraped_data: websiteData
+        "Based on the analysis, we recommend scheduling an appointment with this provider for your physical therapy needs.",
+        "Ensure you submit the prior authorization form at least 48 hours before your visit to maximize insurance coverage.",
+        "Check if pre-authorization is required for this specific service.",
+        "Keep receipts for potential HSA/FSA reimbursement."
+    ]
   };
 }
 

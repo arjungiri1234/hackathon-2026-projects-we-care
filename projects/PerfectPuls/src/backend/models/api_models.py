@@ -33,22 +33,11 @@ class BasicInfo(BaseModel):
     domain: str
     timestamp: str
 
-class ChecklistItem(BaseModel):
-    item: str
-    status: str  # ✅ covered, ⚠️ partial, ❌ denied, 📋 required, ℹ️ info
-    details: str
-
 class FeasibilityScore(BaseModel):
     score: int  # 0-100
     color: Literal["Green", "Yellow", "Red"]
     message: str
 
-class CostBreakdown(BaseModel):
-    session_cost: str
-    your_cost: str
-    insurance_pays: str
-    savings_per_visit: str
-    potential_annual_savings: str
 
 class ServiceDetails(BaseModel):
     service_name: str
@@ -60,16 +49,24 @@ class AnalyzeRequest(BaseModel):
     basic_info: BasicInfo
     page_content: str
 
-class AnalyzeResponse(BaseModel):
-    summary: str
-    match_checklist: List[ChecklistItem]
-    feasibility: FeasibilityScore
-    money_saved: CostBreakdown
-    benefits_services: ServiceDetails
-    recommendations: List[str]
-
 # Health Check Model
 class HealthResponse(BaseModel):
     status: str
     message: str
     timestamp: datetime
+
+class ChecklistItem(BaseModel):
+    item: str
+    status: str
+    details: str
+
+class BenefitsServices(BaseModel):
+    service_name: str
+    coverage_type: str
+    copay: str
+
+class AnalyzeResponse(BaseModel):
+    summary: str
+    match_checklist: List[ChecklistItem]
+    benefits_services: BenefitsServices
+    recommendations: List[str]

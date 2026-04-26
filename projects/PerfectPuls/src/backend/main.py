@@ -16,6 +16,7 @@ from models.api_models import (
 from config.settings import settings
 from services.gemini_service import gemini_service
 from services.neo4j_service import neo4j_service
+from services.rag_service import rag_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -164,138 +165,31 @@ async def process_pdf(
 async def analyze_website(request: AnalyzeRequest):
     """
     Chrome Extension endpoint: Analyzes website content for healthcare services
+    Performs Graph RAG against Neo4j policy database
     """
+    start_time = time.time()
+    
     try:
-        logger.info(f"🔍 Analyzing website: {request.basic_info.url}")
+        logger.info(f"🔍 Analyzing website: {request.basic_info.domain}")
         
-        # 1. Extract potential services from website content
-        website_text = f"{request.basic_info.title} {request.page_content}".lower()
-        
-        # Common healthcare service keywords to look for
-        service_keywords = {
-            "physiotherapy": "Physical Therapy",
-            "physical therapy": "Physical Therapy", 
-            "massage therapy": "Massage Therapy",
-            "acupuncture": "Acupuncture",
-            "chiropractic": "Chiropractic Care",
-            "spinal manipulation": "Spinal Manipulation",
-            "occupational therapy": "Occupational Therapy",
-            "speech therapy": "Speech Therapy",
-            "cognitive therapy": "Cognitive Therapy",
-            "primary care": "Primary Care Visit",
-            "specialist": "Specialist Visit",
-            "mental health": "Mental Health Services",
-            "counseling": "Counseling Services",
-            "dermatologist": "Dermatology"
-        }
-        
-        detected_services = []
-        for keyword, service_name in service_keywords.items():
-            if keyword in website_text:
-                detected_services.append(service_name)
-        
-        # 2. Use semantic search to find similar services in Neo4j (all policies)
-        coverage_checklist = []
-        
-        if detected_services:
-            # Search for each detected service
-            for service in detected_services[:3]:  # Limit to top 3 services
-                try:
-                    # Semantic search across all policies (no specific policy_id)
-                    semantic_results = await neo4j_service.semantic_search(
-                        query_text=service,
-                        policy_id=None,  # Search all policies
-                        limit=2
-                    )
-                    
-                    if semantic_results:
-                        # Found similar services in knowledge graph
-                        coverage_checklist.append({
-                            "item": service,
-                            "status": "✅",
-                            "details": f"Similar services found in uploaded policies (similarity: {semantic_results[0].get('similarity', 0):.2f})"
-                        })
-                    else:
-                        # No similar services found
-                        coverage_checklist.append({
-                            "item": service,
-                            "status": "❓",
-                            "details": "Upload your insurance policy to check coverage"
-                        })
-                        
-                except Exception as e:
-                    logger.error(f"Error searching for service {service}: {str(e)}")
-                    coverage_checklist.append({
-                        "item": service,
-                        "status": "ℹ️",
-                        "details": "Analysis requires uploaded policy document"
-                    })
-        
-        # 3. Add general recommendations based on detected services
-        if not coverage_checklist:
-            coverage_checklist.append({
-                "item": "General Healthcare Services",
-                "status": "ℹ️",
-                "details": "Upload your insurance policy for personalized coverage analysis"
-            })
-        
-        # 4. Calculate feasibility based on detected services
-        if detected_services:
-            feasibility = {
-                "score": 75,  # Moderate score when services detected
-                "color": "Yellow",
-                "message": f"Found {len(detected_services)} healthcare services - Upload policy for detailed coverage"
-            }
-        else:
-            feasibility = {
-                "score": 50,
-                "color": "Yellow", 
-                "message": "No specific healthcare services detected on this page"
-            }
-        
-        # 5. Generate example cost breakdown
-        cost_breakdown = {
-            "session_cost": "$100-$300",
-            "your_cost": "Varies by plan",
-            "insurance_pays": "Upload policy to see",
-            "savings_per_visit": "Unknown without policy",
-            "potential_annual_savings": "Upload policy for estimates"
-        }
-        
-        # 6. Generate service details (example)
-        primary_service = detected_services[0] if detected_services else "Healthcare Services"
-        service_details = {
-            "service_name": primary_service,
-            "coverage_type": "Upload policy to check",
-            "copay": "Varies by plan",
-            "renewal_date": "Check your policy document"
-        }
-        
-        # 7. Generate recommendations
-        recommendations = [
-            "Upload your insurance policy document for personalized coverage analysis",
-            "Contact your insurance provider to verify coverage for specific services",
-            "Ask the provider about payment plans and insurance acceptance"
-        ]
-        
-        if detected_services:
-            recommendations.insert(0, f"This page mentions {len(detected_services)} healthcare services that may be covered by insurance")
-        
-        return AnalyzeResponse(
-            summary=f"Found {len(detected_services)} potential healthcare services on this page. Upload your insurance policy for detailed coverage analysis.",
-            match_checklist=coverage_checklist,
-            feasibility=feasibility,
-            money_saved=cost_breakdown,
-            benefits_services=service_details,
-            recommendations=recommendations
+        # Perform RAG analysis using the website data
+        analysis_result = await rag_service.analyze_website(
+            basic_info=request.basic_info.model_dump(),
+            page_content=request.page_content
         )
+        
+        processing_time = int((time.time() - start_time) * 1000)
+        logger.info(f"✅ Analysis completed in {processing_time}ms for {request.basic_info.domain}")
+        
+        return analysis_result
         
     except Exception as e:
         logger.error(f"❌ Website analysis failed: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"Analysis failed: {str(e)}"
+            detail=f"Website analysis failed: {str(e)}"
         )
+    
 
 if __name__ == "__main__":
     import uvicorn
