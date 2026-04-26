@@ -6,6 +6,7 @@ import DashboardPage from '../pages/DashboardPage'
 import NewReferralPage from '../pages/NewReferralPage'
 import ReferralDetailPage from '../pages/ReferralDetailPage'
 import SpecialistsPage from '../pages/SpecialistsPage'
+import SettingsPage from '../pages/SettingsPage'
 import {
   PatientPortalPage,
   NotFoundPage,
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
           { path: '/referrals/new', element: <NewReferralPage /> },
           { path: '/referrals/:id', element: <ReferralDetailPage /> },
           { path: '/specialists', element: <SpecialistsPage /> },
+          { path: '/settings', element: <SettingsPage /> },
         ],
       },
     ],
