@@ -105,6 +105,7 @@ Schema: `backend/supabase/schema.sql`
 2. Copy `.env.example` to `.env` and fill in:
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
    - `GEMINI_API_KEY`
      - `FRONTEND_URL` (e.g. `http://localhost:5173` for password reset redirects)
 3. Run schema and seed against your Supabase project:

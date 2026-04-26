@@ -1,5 +1,5 @@
 import { HttpError } from "../lib/http-error";
-import { supabase } from "../lib/supabase";
+import { createSupabaseUserClient, supabase } from "../lib/supabase";
 import {
   listLookupNames,
   normalizeLookupValue,
@@ -86,6 +86,7 @@ export async function uploadAvatar(
   doctorId: string,
   fileBuffer: Buffer,
   mimeType: string,
+  accessToken: string,
 ) {
   if (!ALLOWED_AVATAR_MIME_TYPES.has(mimeType)) {
     throw new HttpError(
@@ -100,8 +101,9 @@ export async function uploadAvatar(
 
   const fileExtension = mimeType.split("/")[1] ?? "jpg";
   const filePath = `avatars/${doctorId}.${fileExtension}`;
+  const doctorStorage = createSupabaseUserClient(accessToken);
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await doctorStorage.storage
     .from("doctor-profiles")
     .upload(filePath, fileBuffer, {
       contentType: mimeType,
@@ -110,7 +112,11 @@ export async function uploadAvatar(
 
   if (uploadError) throw new HttpError(500, uploadError.message);
 
-  const avatarUrl = await resolveAvatarUrl(filePath);
+  const { data: signedUrlData, error: signedUrlError } = await doctorStorage.storage
+    .from("doctor-profiles")
+    .createSignedUrl(filePath, AVATAR_SIGNED_URL_TTL_SECONDS);
+
+  if (signedUrlError) throw new HttpError(500, signedUrlError.message);
 
   const { error: updateError } = await supabase
     .from("doctors")
@@ -119,7 +125,7 @@ export async function uploadAvatar(
 
   if (updateError) throw new HttpError(500, updateError.message);
 
-  return { avatar_url: avatarUrl };
+  return { avatar_url: signedUrlData.signedUrl };
 }
 
 export async function getDoctorProfileLookups() {

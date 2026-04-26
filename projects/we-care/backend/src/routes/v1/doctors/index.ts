@@ -80,10 +80,17 @@ router.post(
       return;
     }
 
+    const accessToken = req.headers.authorization?.split(" ")[1];
+    if (!accessToken) {
+      res.status(401).json({ error: "Missing or invalid authorization header" });
+      return;
+    }
+
     const result = await uploadAvatar(
       req.doctor!.id,
       req.file.buffer,
       req.file.mimetype,
+      accessToken,
     );
     res.status(200).json(result);
   },
