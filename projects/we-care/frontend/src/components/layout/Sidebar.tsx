@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  BarChart2,
   HelpCircle,
   LayoutDashboard,
   Plus,
@@ -23,7 +22,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/referrals", label: "Referrals", icon: Users },
   { to: "/specialists", label: "Specialists", icon: UserRound },
-  { to: "/analytics", label: "Analytics", icon: BarChart2 },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
