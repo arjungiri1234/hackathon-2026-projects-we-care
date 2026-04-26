@@ -6,7 +6,6 @@ interface PatientInfo {
   dob: string
   mrn: string
   contact: string
-  insurance: string
 }
 
 interface PatientInfoCardProps {
@@ -37,9 +36,6 @@ export function PatientInfoCard({ patient, onEdit }: PatientInfoCardProps) {
         <InfoField label="Date of Birth" value={patient.dob} />
         <InfoField label="MRN / ID" value={patient.mrn} />
         <InfoField label="Contact" value={patient.contact} />
-        <div className="col-span-2">
-          <InfoField label="Primary Insurance" value={patient.insurance} />
-        </div>
       </div>
     </div>
   )

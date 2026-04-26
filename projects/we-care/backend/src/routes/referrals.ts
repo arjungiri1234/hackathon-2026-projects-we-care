@@ -4,6 +4,7 @@ import {
   createPatientAndReferral,
   getReferralById,
   getReferralsByDoctor,
+  updateAppointmentStatus,
   updateReferralStatus,
 } from "../services/referrals.service";
 import { normalizeReferralViewType } from "../services/referral-view";
@@ -90,6 +91,35 @@ router.get("/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
   const referral = await getReferralById(referralId, req.doctor!.id);
   res.status(200).json(referral);
 });
+
+router.patch(
+  "/:id/appointment",
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    const { status } = req.body;
+    const referralId = getParamValue(req.params.id);
+    const allowed = ["confirmed", "cancelled"];
+
+    if (!referralId) {
+      res.status(400).json({ error: "id is required" });
+      return;
+    }
+
+    if (!status || !allowed.includes(status)) {
+      res
+        .status(400)
+        .json({ error: `status must be one of: ${allowed.join(", ")}` });
+      return;
+    }
+
+    const updated = await updateAppointmentStatus(
+      referralId,
+      req.doctor!.id,
+      status as "confirmed" | "cancelled",
+    );
+    res.status(200).json(updated);
+  },
+);
 
 router.patch(
   "/:id/status",

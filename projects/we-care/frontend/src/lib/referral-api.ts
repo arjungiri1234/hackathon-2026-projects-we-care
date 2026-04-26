@@ -27,6 +27,7 @@ export interface ReferralDetail {
     hospital: string;
   } | null;
   appointment: {
+    id: string;
     preferred_date: string;
     time_slot: 'morning' | 'afternoon' | 'evening';
     status: 'requested' | 'confirmed' | 'cancelled';
@@ -45,5 +46,13 @@ export async function updateReferralStatus(
   status: 'pending' | 'sent' | 'accepted' | 'completed',
 ): Promise<{ patient_token?: string }> {
   const { data } = await api.patch(`/api/referrals/${id}/status`, { status });
+  return data;
+}
+
+export async function updateReferralAppointmentStatus(
+  id: string,
+  status: 'confirmed' | 'cancelled',
+): Promise<ReferralDetail['appointment']> {
+  const { data } = await api.patch(`/api/referrals/${id}/appointment`, { status });
   return data;
 }

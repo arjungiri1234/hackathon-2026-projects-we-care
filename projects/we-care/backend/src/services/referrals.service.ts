@@ -1,3 +1,4 @@
+import { HttpError } from "../lib/http-error";
 import { supabase } from "../lib/supabase";
 import { randomUUID } from 'crypto';
 import { sendPatientPortalEmail } from './email.service';
@@ -19,6 +20,7 @@ interface DoctorDirectoryRow {
 }
 
 interface AppointmentRow {
+  id: string;
   preferred_date: string;
   time_slot: "morning" | "afternoon" | "evening";
   status: "requested" | "confirmed" | "cancelled";
@@ -186,7 +188,7 @@ export async function getReferralById(referralId: string, doctorId: string) {
         hospitals(name)
       ),
       referral_status_history (status, changed_at),
-      appointments (preferred_date, time_slot, status, notes)
+      appointments (id, preferred_date, time_slot, status, notes)
     `,
     )
     .eq("id", referralId)
@@ -213,15 +215,43 @@ export async function updateReferralStatus(
   doctorId: string,
   status: "pending" | "sent" | "accepted" | "completed",
 ) {
+  const { data: existingReferral, error: existingReferralError } = await supabase
+    .from("referrals")
+    .select("id, doctor_id, referred_by, status")
+    .eq("id", referralId)
+    .single();
+
+  if (existingReferralError) {
+    if (existingReferralError.code === "PGRST116") {
+      throw new HttpError(404, "Referral not found");
+    }
+
+    throw new HttpError(500, existingReferralError.message);
+  }
+
+  const isReferrer = existingReferral.referred_by === doctorId;
+  const isTargetDoctor = existingReferral.doctor_id === doctorId;
+  const canSendReferral = status === "sent" && isReferrer;
+  const canManageReceivedReferral =
+    (status === "accepted" || status === "completed") && isTargetDoctor;
+
+  if (!canSendReferral && !canManageReceivedReferral) {
+    throw new HttpError(
+      403,
+      status === "sent"
+        ? "Only the referring doctor can send this referral"
+        : "Only the target doctor can update referral status",
+    );
+  }
+
   const { data, error } = await supabase
     .from("referrals")
     .update({ status })
     .eq("id", referralId)
-    .or(`doctor_id.eq.${doctorId},referred_by.eq.${doctorId}`)
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throw new HttpError(500, error.message);
 
   if (status === 'sent') {
     const { data: referral } = await supabase
@@ -230,7 +260,10 @@ export async function updateReferralStatus(
       .eq('id', referralId)
       .single();
 
-    const patientsRaw = referral?.patients as unknown as { full_name: string; email?: string } | { full_name: string; email?: string }[] | null;
+    const patientsRaw = referral?.patients as unknown as
+      | { full_name: string; email?: string }
+      | { full_name: string; email?: string }[]
+      | null;
     const patient = Array.isArray(patientsRaw) ? patientsRaw[0] : patientsRaw;
 
     const token = randomUUID();
@@ -252,4 +285,45 @@ export async function updateReferralStatus(
   }
 
   return data;
+}
+
+export async function updateAppointmentStatus(
+  referralId: string,
+  doctorId: string,
+  status: "confirmed" | "cancelled",
+) {
+  const { data: referral, error: referralError } = await supabase
+    .from("referrals")
+    .select("id, doctor_id")
+    .eq("id", referralId)
+    .single();
+
+  if (referralError) {
+    if (referralError.code === "PGRST116") {
+      throw new HttpError(404, "Referral not found");
+    }
+
+    throw new HttpError(500, referralError.message);
+  }
+
+  if (referral.doctor_id !== doctorId) {
+    throw new HttpError(403, "Only the target doctor can update appointment status");
+  }
+
+  const { data: appointment, error: appointmentError } = await supabase
+    .from("appointments")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("referral_id", referralId)
+    .select("id, preferred_date, time_slot, status, notes")
+    .single();
+
+  if (appointmentError) {
+    if (appointmentError.code === "PGRST116") {
+      throw new HttpError(404, "Appointment not found");
+    }
+
+    throw new HttpError(500, appointmentError.message);
+  }
+
+  return appointment;
 }
