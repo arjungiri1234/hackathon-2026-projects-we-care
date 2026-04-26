@@ -19,12 +19,13 @@
 
 ## 2. Model Choices
 
-**Model used:** Google Gemini 1.5 Flash
+**Model used:** Google Gemini 2.5 Flash
 
-**Why Gemini 1.5 Flash:**
-- Free tier with generous limits (1500 requests/day) — suitable for hackathon scale
+**Why Gemini 2.5 Flash:**
+- Improved performance and speed over Gemini 1.5 Flash
 - Strong performance extracting structured information from unstructured clinical text
 - Reliable instruction-following for JSON-formatted output
+- Free tier with generous limits — suitable for hackathon scale
 
 **How it is used:**
 - Extracts structured fields (patient name, diagnosis, urgency, required specialty) from doctor's free-text notes
