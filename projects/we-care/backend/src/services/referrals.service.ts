@@ -8,6 +8,44 @@ interface ReferralsQueryOptions {
   pageSize: number;
 }
 
+interface DoctorDirectoryRow {
+  id: string;
+  full_name: string;
+  contact_number: string | null;
+  specialties: { name: string } | Array<{ name: string }> | null;
+  hospitals: { name: string } | Array<{ name: string }> | null;
+}
+
+async function getDoctorsByIds(doctorIds: string[]) {
+  if (!doctorIds.length) return new Map<string, {
+    id: string;
+    full_name: string;
+    contact_number: string | null;
+    specialty: string;
+    hospital: string;
+  }>();
+
+  const { data, error } = await supabase
+    .from("doctors")
+    .select("id, full_name, contact_number, specialties(name), hospitals(name)")
+    .in("id", doctorIds);
+
+  if (error) throw new Error(error.message);
+
+  return new Map(
+    ((data ?? []) as DoctorDirectoryRow[]).map((doctor) => [
+      doctor.id,
+      {
+        id: doctor.id,
+        full_name: doctor.full_name,
+        contact_number: doctor.contact_number,
+        specialty: extractLookupName(doctor.specialties) ?? "",
+        hospital: extractLookupName(doctor.hospitals) ?? "",
+      },
+    ]),
+  );
+}
+
 export async function createPatientAndReferral(
   doctorId: string,
   patientData: {
@@ -19,7 +57,7 @@ export async function createPatientAndReferral(
     medical_history?: string;
   },
   referralData: {
-    specialist_id?: string;
+    doctor_id: string;
     clinical_notes: string;
     extracted_data?: object;
     diagnosis?: string;
@@ -37,7 +75,16 @@ export async function createPatientAndReferral(
 
   const { data: referral, error: referralError } = await supabase
     .from("referrals")
-    .insert({ doctor_id: doctorId, patient_id: patient.id, ...referralData })
+    .insert({
+      doctor_id: referralData.doctor_id,
+      referred_by: doctorId,
+      patient_id: patient.id,
+      clinical_notes: referralData.clinical_notes,
+      extracted_data: referralData.extracted_data,
+      diagnosis: referralData.diagnosis,
+      required_specialty: referralData.required_specialty,
+      urgency: referralData.urgency,
+    })
     .select()
     .single();
 
@@ -57,15 +104,8 @@ export async function getReferralsByDoctor(
     .from("referrals")
     .select(
       `
-      id, clinical_notes, diagnosis, urgency, status, created_at, required_specialty,
-      patients (id, full_name),
-      specialist:doctors!referrals_specialist_id_fkey (
-        id,
-        full_name,
-        contact_number,
-        specialties(name),
-        hospitals(name)
-      )
+      id, clinical_notes, diagnosis, urgency, status, created_at, doctor_id,
+      patients (id, full_name)
     `,
       { count: "exact" },
     )
@@ -74,20 +114,15 @@ export async function getReferralsByDoctor(
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
+  const doctorMap = await getDoctorsByIds(
+    [...new Set((data ?? []).map((referral) => referral.doctor_id).filter(Boolean))] as string[],
+  );
   const mappedReferrals = data.map((referral) => {
-    const specialist = Array.isArray(referral.specialist)
-      ? referral.specialist[0]
-      : referral.specialist;
+    const targetDoctor = doctorMap.get(referral.doctor_id);
 
     return {
       ...referral,
-      specialist: specialist
-        ? {
-            ...specialist,
-            specialty: extractLookupName(specialist.specialties) ?? "",
-            hospital: extractLookupName(specialist.hospitals) ?? "",
-          }
-        : specialist,
+      targetDoctor,
     };
   });
 
@@ -110,11 +145,6 @@ export async function getReferralById(referralId: string, doctorId: string) {
       `
       *,
       patients (*),
-      specialist:doctors!referrals_specialist_id_fkey (
-        *,
-        specialties(name),
-        hospitals(name)
-      ),
       referral_status_history (status, changed_at)
     `,
     )
@@ -123,19 +153,12 @@ export async function getReferralById(referralId: string, doctorId: string) {
     .single();
 
   if (error) throw new Error(error.message);
-  const specialist = Array.isArray(data.specialist)
-    ? data.specialist[0]
-    : data.specialist;
+  const doctorMap = await getDoctorsByIds([data.doctor_id]);
+  const targetDoctor = doctorMap.get(data.doctor_id) ?? null;
 
   return {
     ...data,
-    specialist: specialist
-      ? {
-          ...specialist,
-          specialty: extractLookupName(specialist.specialties) ?? "",
-          hospital: extractLookupName(specialist.hospitals) ?? "",
-        }
-      : specialist,
+    targetDoctor,
   };
 }
 

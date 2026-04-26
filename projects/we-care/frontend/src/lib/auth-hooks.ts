@@ -14,6 +14,7 @@ import {
   uploadDoctorAvatar,
   type UpdateDoctorProfilePayload,
 } from './auth-api'
+import { getDashboardSummary, type DashboardSummary } from './dashboard-api'
 import { clearDoctorSession, syncDoctorToStores } from './doctor-session'
 import { queryKeys } from './query-keys'
 import { useAuthStore } from '../stores/authStore'
@@ -54,6 +55,13 @@ export function useDoctorByIdQuery(doctorId: string) {
     queryKey: queryKeys.doctorById(doctorId),
     queryFn: () => getDoctorById(doctorId),
     enabled: Boolean(doctorId),
+  })
+}
+
+export function useDashboardQuery() {
+  return useQuery<DashboardSummary>({
+    queryKey: queryKeys.dashboard,
+    queryFn: getDashboardSummary,
   })
 }
 
