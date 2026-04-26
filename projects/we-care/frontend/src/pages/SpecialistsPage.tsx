@@ -31,13 +31,15 @@ export default function SpecialistsPage() {
   const [search, setSearch] = useState('')
   const [specialtyFilter, setSpecialtyFilter] = useState('')
   const [locationFilter, setLocationFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const pageSize = 10
   const specialistsDirectoryQuery = useQuery({
-    queryKey: queryKeys.specialistsDirectory,
-    queryFn: getSpecialistsDirectory,
+    queryKey: [...queryKeys.specialistsDirectory, page, pageSize],
+    queryFn: () => getSpecialistsDirectory(page, pageSize),
   })
 
   const specialists = useMemo(
-    () => (specialistsDirectoryQuery.data ?? []).map(mapDirectorySpecialist),
+    () => (specialistsDirectoryQuery.data?.items ?? []).map(mapDirectorySpecialist),
     [specialistsDirectoryQuery.data]
   )
 
@@ -66,7 +68,13 @@ export default function SpecialistsPage() {
     setSearch('')
     setSpecialtyFilter('')
     setLocationFilter('')
+    setPage(1)
   }
+
+  const total = specialistsDirectoryQuery.data?.total ?? specialists.length
+  const totalPages = specialistsDirectoryQuery.data?.totalPages ?? 1
+  const canGoPrevious = page > 1
+  const canGoNext = page < totalPages
 
   return (
     <div className="space-y-5">
@@ -91,7 +99,10 @@ export default function SpecialistsPage() {
           </div>
 
           <div className="relative">
-            <select value={specialtyFilter} onChange={(event) => setSpecialtyFilter(event.target.value)} className={selectCls}>
+            <select value={specialtyFilter} onChange={(event) => {
+              setSpecialtyFilter(event.target.value)
+              setPage(1)
+            }} className={selectCls}>
               <option value="">All Specialties</option>
               {specialties.map((specialty) => <option key={specialty} value={specialty}>{specialty}</option>)}
             </select>
@@ -99,7 +110,10 @@ export default function SpecialistsPage() {
           </div>
 
           <div className="relative">
-            <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} className={selectCls}>
+            <select value={locationFilter} onChange={(event) => {
+              setLocationFilter(event.target.value)
+              setPage(1)
+            }} className={selectCls}>
               <option value="">All Locations</option>
               {locations.map((location) => <option key={location} value={location}>{location}</option>)}
             </select>
@@ -156,13 +170,21 @@ export default function SpecialistsPage() {
 
         <div className="flex items-center justify-between border-t border-border px-5 py-3">
           <p className="text-xs text-muted">
-            Showing {visible.length} of {specialists.length} clinicians
+            Showing {visible.length} of {total} clinicians
           </p>
           <div className="flex gap-2">
-            <button disabled className="rounded-lg border border-border px-4 py-1.5 text-xs font-medium text-muted disabled:opacity-40">
+            <button
+              disabled={!canGoPrevious}
+              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              className="rounded-lg border border-border px-4 py-1.5 text-xs font-medium text-muted disabled:opacity-40"
+            >
               Previous
             </button>
-            <button className="rounded-lg border border-border px-4 py-1.5 text-xs font-medium text-primary hover:bg-base transition-colors">
+            <button
+              disabled={!canGoNext}
+              onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
+              className="rounded-lg border border-border px-4 py-1.5 text-xs font-medium text-primary hover:bg-base transition-colors disabled:opacity-40"
+            >
               Next
             </button>
           </div>

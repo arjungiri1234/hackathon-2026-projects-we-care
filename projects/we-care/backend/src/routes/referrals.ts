@@ -9,10 +9,23 @@ import {
 import { AuthRequest } from "../types";
 
 const router = Router();
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 10;
+const MAX_PAGE_SIZE = 100;
 
 function getParamValue(value: string | string[] | undefined) {
   if (Array.isArray(value)) return value[0];
   return value;
+}
+
+function parsePositiveInteger(value: string | string[] | undefined, fallback: number) {
+  const parsed = Number(getParamValue(value));
+
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return fallback;
+  }
+
+  return parsed;
 }
 
 router.post("/", authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -41,7 +54,22 @@ router.post("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 });
 
 router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
-  const referrals = await getReferralsByDoctor(req.doctor!.id);
+  const page = parsePositiveInteger(
+    req.query.page as string | string[] | undefined,
+    DEFAULT_PAGE,
+  );
+  const pageSize = Math.min(
+    parsePositiveInteger(
+      req.query.pageSize as string | string[] | undefined,
+      DEFAULT_PAGE_SIZE,
+    ),
+    MAX_PAGE_SIZE,
+  );
+
+  const referrals = await getReferralsByDoctor(req.doctor!.id, {
+    page,
+    pageSize,
+  });
   res.status(200).json(referrals);
 });
 

@@ -1,7 +1,17 @@
 import { supabase } from "../lib/supabase";
 import { extractLookupName } from "./lookup-service";
 
-export async function getAvailableSpecialists(specialty?: string) {
+interface SpecialistsQueryOptions {
+  specialty?: string;
+  page: number;
+  pageSize: number;
+}
+
+export async function getAvailableSpecialists({
+  specialty,
+  page,
+  pageSize,
+}: SpecialistsQueryOptions) {
   const { data, error } = await supabase
     .from("doctors")
     .select(
@@ -11,7 +21,7 @@ export async function getAvailableSpecialists(specialty?: string) {
 
   if (error) throw new Error(error.message);
 
-  return data
+  const filteredSpecialists = data
     .map((doctor) => ({
       id: doctor.id,
       full_name: doctor.full_name,
@@ -25,4 +35,16 @@ export async function getAvailableSpecialists(specialty?: string) {
         .toLowerCase()
         .includes(specialty.toLowerCase());
     });
+
+  const total = filteredSpecialists.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const startIndex = (page - 1) * pageSize;
+
+  return {
+    items: filteredSpecialists.slice(startIndex, startIndex + pageSize),
+    page,
+    pageSize,
+    total,
+    totalPages,
+  };
 }

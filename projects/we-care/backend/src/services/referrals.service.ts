@@ -3,6 +3,11 @@ import { randomUUID } from 'crypto';
 import { sendPatientPortalEmail } from './email.service';
 import { extractLookupName } from "./lookup-service";
 
+interface ReferralsQueryOptions {
+  page: number;
+  pageSize: number;
+}
+
 export async function createPatientAndReferral(
   doctorId: string,
   patientData: {
@@ -41,8 +46,14 @@ export async function createPatientAndReferral(
   return { patient, referral };
 }
 
-export async function getReferralsByDoctor(doctorId: string) {
-  const { data, error } = await supabase
+export async function getReferralsByDoctor(
+  doctorId: string,
+  { page, pageSize }: ReferralsQueryOptions,
+) {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await supabase
     .from("referrals")
     .select(
       `
@@ -56,8 +67,10 @@ export async function getReferralsByDoctor(doctorId: string) {
         hospitals(name)
       )
     `,
+      { count: "exact" },
     )
     .eq("doctor_id", doctorId)
+    .range(from, to)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
@@ -78,7 +91,16 @@ export async function getReferralsByDoctor(doctorId: string) {
     };
   });
 
-  return mappedReferrals;
+  const total = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  return {
+    items: mappedReferrals,
+    page,
+    pageSize,
+    total,
+    totalPages,
+  };
 }
 
 export async function getReferralById(referralId: string, doctorId: string) {
