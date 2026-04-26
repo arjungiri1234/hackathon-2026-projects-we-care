@@ -35,6 +35,7 @@ export function NewReferralStep2({
   onConfirm,
 }: NewReferralStep2Props) {
   const [data, setData] = useState<ExtractedData>(extracted)
+  const isEmailValid = data.email.trim().length > 0
 
   function update(field: keyof ExtractedData, value: string) {
     setData((prev) => ({ ...prev, [field]: value }))
@@ -83,7 +84,15 @@ export function NewReferralStep2({
               </div>
               <div>
                 <AiLabel>Email</AiLabel>
-                <input className={inputCls} value={data.email} onChange={(e) => update('email', e.target.value)} />
+                <input
+                  type="email"
+                  className={inputCls}
+                  value={data.email}
+                  onChange={(e) => update('email', e.target.value)}
+                />
+                {!isEmailValid ? (
+                  <p className="mt-1 text-xs text-red-600">Email is required to send the referral portal link.</p>
+                ) : null}
               </div>
             </div>
 
@@ -139,7 +148,7 @@ export function NewReferralStep2({
 
       <div className="flex items-center justify-end gap-3">
         <Button variant="ghost" onClick={onBack}>Back</Button>
-        <Button onClick={() => onConfirm(data)}>
+        <Button disabled={!isEmailValid} onClick={() => onConfirm(data)}>
           Confirm and Continue →
         </Button>
       </div>
