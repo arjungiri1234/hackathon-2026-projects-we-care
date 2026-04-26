@@ -1,31 +1,50 @@
-import 'package:medimeal/models/medications.dart';
+import '../models/medicine_template.dart';
 
 class MockDataService {
-  static List<Medication> getMedications() {
-    return [
-      Medication(
+  static List<MedicineTemplate> getMedicineTemplates() {
+    return const [
+      MedicineTemplate(
         id: '1',
         name: 'Levothyroxine',
         dosage: '50 mcg',
-        time: '6:00 AM',
-        instructions: 'Morning dose with timing-sensitive follow-up',
         workflowType: 'timing_sensitive',
+        waitBeforeMealSeconds: 1800,
+        autoStartWorkflow: true,
+        userHeadline: 'Your next meal timing matters',
+        userWhatHappened: 'You logged your morning medication.',
+        userWhatMattersNow:
+            'Wait before eating so your next meal fits the current timing window.',
+        userNextAction:
+            'You can prepare a meal now, but wait until the reminder before eating.',
       ),
-      Medication(
+      MedicineTemplate(
         id: '2',
         name: 'Amoxicillin',
         dosage: '500 mg',
-        time: '9:00 AM',
-        instructions: 'Daily support routine and adherence tracking',
-        workflowType: 'hydration_support',
+        workflowType: 'support_routine',
+        waitBeforeMealSeconds: null,
+        autoStartWorkflow: false,
+        userHeadline: 'Stay on track today',
+        userWhatHappened: 'You logged your medication for today.',
+        userWhatMattersNow:
+            'A support routine can help you stay consistent for the rest of the day.',
+        userNextAction:
+            'Start a support routine and choose a simple meal that fits today.',
       ),
-      Medication(
+      MedicineTemplate(
         id: '3',
         name: 'Allopurinol',
         dosage: '100 mg',
-        time: '1:00 PM',
-        instructions: 'Adaptive weekly food-awareness workflow',
-        workflowType: 'weekly_limit_tracking',
+        workflowType: 'weekly_tracking',
+        waitBeforeMealSeconds: null,
+        autoStartWorkflow: false,
+        userHeadline: 'This week’s choices affect future suggestions',
+        userWhatHappened:
+            'You logged your medication and weekly tracking is active.',
+        userWhatMattersNow:
+            'This week’s previous choices affect what the app should suggest next.',
+        userNextAction:
+            'Choose meals that stay within your remaining flexibility for the week.',
       ),
     ];
   }

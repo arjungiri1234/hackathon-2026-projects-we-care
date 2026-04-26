@@ -18,23 +18,31 @@ class MealPlannerService {
         : '$mealType with ${ingredients.take(2).join(' & ')}';
 
     final careSummary = careState?.summary ?? 'general care support';
-    final careReason = careState?.caution.isNotEmpty == true
-        ? careState!.caution
-        : 'This suggestion supports your current care flow.';
+    final careWarning = careState?.caution ?? '';
 
     return MealPlan(
+      canGenerateRecipe: true,
       title: title,
       summary:
           'A simple $mealType suggestion based on your available ingredients and current care context.',
       ingredientsUsed: ingredients.isEmpty
           ? ['rice', 'vegetables', 'protein source']
           : ingredients,
+      blockedIngredients: [],
+      warning: '',
       steps: [
         'Prepare the available ingredients.',
         'Combine them into a simple balanced $mealType.',
         'Keep the meal aligned with your current care timing and workflow.',
       ],
-      reason: 'Care status: $careSummary\n$careReason',
+      whyIngredientsFit: [
+        'These ingredients were kept because they fit the current care context.',
+        if (careSummary.isNotEmpty) 'Current care context: $careSummary',
+      ],
+      whyIngredientsWereBlocked: [],
+      timingMessage: careWarning.isNotEmpty
+          ? careWarning
+          : 'This meal suggestion fits the current care context.',
     );
   }
 }
