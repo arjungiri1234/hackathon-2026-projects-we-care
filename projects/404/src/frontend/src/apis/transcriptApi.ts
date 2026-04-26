@@ -23,6 +23,16 @@ export const transcriptApi = baseApi.injectEndpoints({
         method: "POST",
       }),
     }),
+    generateSummary: builder.mutation<ConsultationSummary, string>({
+      query: (callSessionId) => ({
+        url: `transcript/${callSessionId}/summary`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, arg) => [
+        { type: "ConsultationSummary" as const, id: arg },
+        "ConsultationSummary"
+      ],
+    }),
     getHistory: builder.query<any[], string>({
       query: (patientId) => `transcript/history/${patientId}`,
       providesTags: ["ConsultationSummary"],
@@ -33,5 +43,6 @@ export const transcriptApi = baseApi.injectEndpoints({
 export const { 
   useGetSummaryQuery, 
   useApplyMedicationsMutation,
-  useGetHistoryQuery 
+  useGetHistoryQuery,
+  useGenerateSummaryMutation
 } = transcriptApi;
