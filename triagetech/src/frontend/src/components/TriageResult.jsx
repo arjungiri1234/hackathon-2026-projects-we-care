@@ -42,15 +42,17 @@ export default function TriageResult({ result, lang, onReset }) {
           <h2 className="severity-label" style={{ color: cfg.color }}>
             {cfg.emoji} {t[severityKey] || result.severity_label}
           </h2>
-          <div className="confidence-bar-row">
-            <span className="confidence-text">{t.confidence}: {result.confidence}%</span>
-            <div className="confidence-bar">
-              <div
-                className="confidence-fill"
-                style={{ width: `${result.confidence}%`, background: cfg.color }}
-              />
+          {result.confidence > 0 && (
+            <div className="confidence-bar-row">
+              <span className="confidence-text">{t.confidence}: {result.confidence}%</span>
+              <div className="confidence-bar">
+                <div
+                  className="confidence-fill"
+                  style={{ width: `${result.confidence}%`, background: cfg.color }}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -60,7 +62,47 @@ export default function TriageResult({ result, lang, onReset }) {
         <p className="advice-text">{advice}</p>
       </div>
 
-      {/* Risk Flags */}
+      {/* Doctor Recommendation */}
+      {result.doctor_type && (
+        <div className="result-section doctor-section">
+          <h3>👨‍⚕️ {t.recommended_doctor}</h3>
+          <div className="doctor-card">
+            <div className="doctor-info">
+              <span className="doctor-label">{t.visit_type}:</span>
+              <span className="doctor-value">{lang === 'ne' ? result.doctor_type_ne : result.doctor_type}</span>
+            </div>
+            {result.specialist_recommendation && (
+              <div className="doctor-info">
+                <span className="doctor-label">{t.specialist}:</span>
+                <span className="doctor-value specialist-highlight">
+                  {lang === 'ne' ? result.specialist_recommendation_ne : result.specialist_recommendation}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Popular Doctor Suggestions */}
+      {result.suggested_doctors?.length > 0 && (
+        <div className="result-section suggested-doctors-section">
+          <h3>🩺 {t.suggested_specialists}</h3>
+          <div className="doctor-grid">
+            {result.suggested_doctors.map((doc, i) => (
+              <div key={i} className="doctor-item-card">
+                <div className="doc-avatar">
+                  <span>{doc.name.charAt(0)}</span>
+                </div>
+                <div className="doc-details">
+                  <h4 className="doc-name">{lang === 'ne' ? doc.name_ne : doc.name}</h4>
+                  <p className="doc-hosp">{t.at} <strong>{lang === 'ne' ? doc.hospital_ne : doc.hospital}</strong></p>
+                  <span className="doc-exp">{t.expertise}: {lang === 'ne' ? doc.expertise_ne : doc.expertise}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {result.risk_flags?.length > 0 && (
         <div className="result-section risk-section">
           <h3>⚠️ {t.risk_flags}</h3>

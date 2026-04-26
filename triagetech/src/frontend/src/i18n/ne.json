@@ -37,5 +37,12 @@
   "footer": "ट्रियाजटेक · ह्याकाथन २०२५ · नेपाल",
   "language_toggle": "English",
   "back": "फिर्ता",
-  "try_again": "पुनः प्रयास गर्नुहोस्"
+  "try_again": "पुनः प्रयास गर्नुहोस्",
+  "recommended_doctor": "स्वास्थ्यकर्मी सिफारिस",
+  "specialist": "विशेषज्ञ (Specialist)",
+  "visit_type": "भ्रमणको प्रकार",
+  "quick_select": "द्रुत छनोट",
+  "suggested_specialists": "नेपालका चर्चित विशेषज्ञहरू",
+  "at": "मा",
+  "expertise": "विशेषज्ञता"
 }

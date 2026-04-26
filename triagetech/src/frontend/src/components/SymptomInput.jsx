@@ -63,28 +63,68 @@ export default function SymptomInput({ lang, onSubmit, loading }) {
     }
   };
 
-  const startVoice = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Voice input not supported in this browser. Try Chrome.');
+  const toggleVoice = () => {
+    if (listening) {
+      console.log('Stopping voice recognition...');
+      recognitionRef.current?.stop();
+      setListening(false);
       return;
     }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.error('SpeechRecognition not supported in this browser.');
+      alert('Voice input not supported in this browser. Try Chrome or Edge.');
+      return;
+    }
+
+    console.log('Starting voice recognition...');
     const recognition = new SpeechRecognition();
     recognition.lang = lang === 'ne' ? 'ne-NP' : 'en-US';
-    recognition.interimResults = false;
+    recognition.interimResults = true; // Use interim results for better feedback
+    recognition.continuous = false;
     recognition.maxAlternatives = 1;
 
-    recognition.onstart = () => setListening(true);
-    recognition.onend = () => setListening(false);
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      // Split by commas or "and" to allow multiple symptoms
-      const parts = transcript.split(/,| and | र /i).map(s => s.trim()).filter(Boolean);
-      parts.forEach(p => addSymptom(p));
+    recognition.onstart = () => {
+      console.log('Recognition started');
+      setListening(true);
+      setError('');
     };
-    recognition.onerror = () => setListening(false);
+
+    recognition.onend = () => {
+      console.log('Recognition ended');
+      setListening(false);
+    };
+
+    recognition.onresult = (event) => {
+      const isFinal = event.results[event.results.length - 1].isFinal;
+      if (isFinal) {
+        const transcript = event.results[0][0].transcript;
+        console.log('Final transcript:', transcript);
+        const parts = transcript.split(/,| and | र | अनि | तथा | साथै /i).map(s => s.trim()).filter(Boolean);
+        parts.forEach(p => addSymptom(p));
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      setListening(false);
+      if (event.error === 'not-allowed') {
+        setError(lang === 'ne' ? 'माइक्रोफोन पहुँच अस्वीकार गरियो।' : 'Microphone access denied.');
+      } else if (event.error === 'network') {
+        setError(lang === 'ne' ? 'नेटवर्क त्रुटि। कृपया फेरि प्रयास गर्नुहोस्।' : 'Network error. Please try again.');
+      } else {
+        setError(lang === 'ne' ? `Voice error: ${event.error}` : `Voice error: ${event.error}`);
+      }
+    };
+
     recognitionRef.current = recognition;
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error('Recognition start exception:', e);
+      setListening(false);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -131,6 +171,24 @@ export default function SymptomInput({ lang, onSubmit, loading }) {
           </div>
         )}
 
+        {/* Quick Select */}
+        <div className="quick-select">
+          <p className="quick-select-label">{t.quick_select}:</p>
+          <div className="quick-select-chips">
+            {suggestions_pool.slice(0, 8).map(s => (
+              <button
+                key={s}
+                type="button"
+                className={`quick-chip ${symptoms.includes(s) ? 'selected' : ''}`}
+                onClick={() => addSymptom(s)}
+                disabled={symptoms.includes(s)}
+              >
+                + {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Input row */}
         <div className="input-row">
           <input
@@ -149,7 +207,7 @@ export default function SymptomInput({ lang, onSubmit, loading }) {
             id="voice-btn"
             type="button"
             className={`voice-btn ${listening ? 'listening' : ''}`}
-            onClick={startVoice}
+            onClick={toggleVoice}
             aria-label={listening ? t.listening : t.speak_btn}
             title={t.speak_btn}
           >

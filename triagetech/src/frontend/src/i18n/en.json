@@ -37,5 +37,12 @@
   "footer": "TriageTech · Hackathon 2025 · Nepal",
   "language_toggle": "नेपाली",
   "back": "Back",
-  "try_again": "Try Again"
+  "try_again": "Try Again",
+  "recommended_doctor": "Recommended Healthcare Provider",
+  "specialist": "Specialist",
+  "visit_type": "Suggested Visit Type",
+  "quick_select": "Quick Select",
+  "suggested_specialists": "Popular Specialists in Nepal",
+  "at": "at",
+  "expertise": "Expertise"
 }
