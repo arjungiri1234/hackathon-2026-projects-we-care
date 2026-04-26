@@ -17,6 +17,7 @@ import {
 import { getDashboardSummary, type DashboardSummary } from './dashboard-api'
 import { clearDoctorSession, syncDoctorToStores } from './doctor-session'
 import { queryKeys } from './query-keys'
+import type { ReferralViewType } from './referral-view'
 import { useAuthStore } from '../stores/authStore'
 
 function readRecoveryToken() {
@@ -58,10 +59,10 @@ export function useDoctorByIdQuery(doctorId: string) {
   })
 }
 
-export function useDashboardQuery() {
+export function useDashboardQuery(viewType: ReferralViewType) {
   return useQuery<DashboardSummary>({
-    queryKey: queryKeys.dashboard,
-    queryFn: getDashboardSummary,
+    queryKey: queryKeys.dashboard(viewType),
+    queryFn: () => getDashboardSummary(viewType),
   })
 }
 

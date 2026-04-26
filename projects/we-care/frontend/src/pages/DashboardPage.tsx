@@ -2,13 +2,13 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { Users, CalendarClock, CheckCircle2, Clock } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { Users, CalendarClock, CheckCircle2 } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { StatCard } from '../components/ui/StatCard'
 import { AiInsightCard } from '../components/ui/AiInsightCard'
 import { ReferralTable } from '../components/referrals/ReferralTable'
 import { useDashboardQuery } from '../lib/auth-hooks'
+import { REFERRAL_VIEW_LABELS, normalizeReferralViewType } from '../lib/referral-view'
 import { useAuthStore } from '../stores/authStore'
 
 const tooltipStyle = { borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 12 }
@@ -26,8 +26,10 @@ function SectionCard({ title, children }: { title: string; children: React.React
 
 export default function DashboardPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const doctor = useAuthStore((state) => state.doctor)
-  const dashboardQuery = useDashboardQuery()
+  const viewType = normalizeReferralViewType(searchParams.get('type'))
+  const dashboardQuery = useDashboardQuery(viewType)
 
   if (dashboardQuery.isLoading) {
     return <div className="text-sm text-muted">Loading dashboard...</div>
@@ -45,11 +47,13 @@ export default function DashboardPage() {
   const totalStatus = statusDistribution.reduce((sum, entry) => sum + entry.value, 0)
   const doctorName = doctor?.full_name ?? 'Doctor'
   const doctorSpecialty = doctor?.specialty ?? 'your specialty'
+  const viewLabel = REFERRAL_VIEW_LABELS[viewType]
+  const doctorColumnLabel = viewType === 'outbound' ? 'Target Doctor' : 'Referred By'
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-primary">Dashboard</h2>
+        <h2 className="text-2xl font-bold text-primary">{viewLabel.title}</h2>
         <p className="text-sm text-muted mt-0.5">
           {doctorName}, here&apos;s your current referral activity across {doctorSpecialty}.
         </p>
@@ -57,10 +61,10 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-4 gap-4">
         <StatCard
-          label="Total Referrals"
+          label={viewType === 'pending' ? 'Pending Queue' : `Total ${viewLabel.title.replace(' Referrals', '')}`}
           value={kpis.totalReferrals.toLocaleString()}
           icon={<Users size={20} className="text-accent" />}
-          sub={<span className="text-xs text-muted">all-time referrals created by you</span>}
+          sub={<span className="text-xs text-muted">{viewLabel.subtitle.toLowerCase()}</span>}
         />
         <StatCard
           label="Pending"
@@ -74,18 +78,11 @@ export default function DashboardPage() {
           icon={<CheckCircle2 size={20} className="text-green-600" />}
           sub={<span className="text-xs text-muted">{kpis.acceptedReferrals.toLocaleString()} currently accepted</span>}
         />
-        <StatCard
-          label="Avg Response"
-          value={`${kpis.averageResponseHours.toFixed(1)} hrs`}
-          icon={<Clock size={20} className="text-muted" />}
-          sub={<span className="text-xs text-muted">based on completed referrals</span>}
-        />
+        <AiInsightCard>{aiInsight}</AiInsightCard>
       </div>
 
-      <AiInsightCard>{aiInsight}</AiInsightCard>
-
       <div className="grid grid-cols-[1fr_340px] gap-4">
-        <SectionCard title="Referrals Over Time (6 months)">
+        <SectionCard title={`${viewLabel.title} Over Time (6 months)`}>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={monthlyTrend} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
               <defs>
@@ -146,6 +143,8 @@ export default function DashboardPage() {
         referrals={recentReferrals}
         total={kpis.totalReferrals}
         onView={(id) => navigate(`/referrals/${id}`)}
+        doctorColumnLabel={doctorColumnLabel}
+        emptyMessage={`No recent ${viewType} referrals available.`}
       />
     </div>
   )

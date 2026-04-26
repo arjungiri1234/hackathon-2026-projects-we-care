@@ -6,6 +6,7 @@ import {
   getReferralsByDoctor,
   updateReferralStatus,
 } from "../services/referrals.service";
+import { normalizeReferralViewType } from "../services/referral-view";
 import { AuthRequest } from "../types";
 
 const router = Router();
@@ -65,10 +66,14 @@ router.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
     ),
     MAX_PAGE_SIZE,
   );
+  const type = normalizeReferralViewType(
+    getParamValue(req.query.type as string | string[] | undefined),
+  );
 
   const referrals = await getReferralsByDoctor(req.doctor!.id, {
     page,
     pageSize,
+    type,
   });
   res.status(200).json(referrals);
 });

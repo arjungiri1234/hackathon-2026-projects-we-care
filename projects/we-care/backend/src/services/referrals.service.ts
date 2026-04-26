@@ -2,10 +2,12 @@ import { supabase } from "../lib/supabase";
 import { randomUUID } from 'crypto';
 import { sendPatientPortalEmail } from './email.service';
 import { extractLookupName } from "./lookup-service";
+import type { ReferralViewType } from "./referral-view";
 
 interface ReferralsQueryOptions {
   page: number;
   pageSize: number;
+  type: ReferralViewType;
 }
 
 interface DoctorDirectoryRow {
@@ -95,30 +97,48 @@ export async function createPatientAndReferral(
 
 export async function getReferralsByDoctor(
   doctorId: string,
-  { page, pageSize }: ReferralsQueryOptions,
+  { page, pageSize, type }: ReferralsQueryOptions,
 ) {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  const { data, error, count } = await supabase
+  let query = supabase
     .from("referrals")
     .select(
       `
-      id, clinical_notes, diagnosis, urgency, status, created_at, doctor_id,
+      id, clinical_notes, diagnosis, required_specialty, urgency, status, created_at, doctor_id, referred_by,
       patients (id, full_name)
     `,
       { count: "exact" },
     )
-    .eq("doctor_id", doctorId)
     .range(from, to)
     .order("created_at", { ascending: false });
 
+  if (type === "outbound") {
+    query = query.eq("referred_by", doctorId);
+  } else {
+    query = query.eq("doctor_id", doctorId);
+
+    if (type === "pending") {
+      query = query.eq("status", "pending");
+    }
+  }
+
+  const { data, error, count } = await query;
+
   if (error) throw new Error(error.message);
   const doctorMap = await getDoctorsByIds(
-    [...new Set((data ?? []).map((referral) => referral.doctor_id).filter(Boolean))] as string[],
+    [
+      ...new Set(
+        (data ?? [])
+          .flatMap((referral) => [referral.doctor_id, referral.referred_by])
+          .filter(Boolean),
+      ),
+    ] as string[],
   );
   const mappedReferrals = data.map((referral) => {
-    const targetDoctor = doctorMap.get(referral.doctor_id);
+    const relatedDoctorId = type === "outbound" ? referral.doctor_id : referral.referred_by;
+    const targetDoctor = doctorMap.get(relatedDoctorId);
 
     return {
       ...referral,
