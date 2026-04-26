@@ -5,12 +5,12 @@ import { Button } from '../ui/Button'
 import type { ExtractedData } from '../../types/referral'
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Non-binary', 'Prefer not to say']
-const SPECIALTY_OPTIONS = ['Cardiology', 'Neurology', 'Orthopedics', 'Dermatology', 'Gastroenterology']
 const URGENCY_OPTIONS = ['Routine', 'Elevated', 'Urgent']
 
 interface NewReferralStep2Props {
   clinicalNote: string
   extracted: ExtractedData
+  specialtyOptions: string[]
   onBack: () => void
   onConfirm: (data: ExtractedData) => void
 }
@@ -27,7 +27,13 @@ function AiLabel({ children }: { children: ReactNode }) {
 const inputCls = 'w-full rounded-lg border-2 border-ai/40 bg-surface px-3 py-2 text-sm text-primary focus:outline-none focus:border-ai'
 const selectCls = `${inputCls} appearance-none cursor-pointer`
 
-export function NewReferralStep2({ clinicalNote, extracted, onBack, onConfirm }: NewReferralStep2Props) {
+export function NewReferralStep2({
+  clinicalNote,
+  extracted,
+  specialtyOptions,
+  onBack,
+  onConfirm,
+}: NewReferralStep2Props) {
   const [data, setData] = useState<ExtractedData>(extracted)
 
   function update(field: keyof ExtractedData, value: string) {
@@ -90,8 +96,16 @@ export function NewReferralStep2({ clinicalNote, extracted, onBack, onConfirm }:
 
             <div>
               <AiLabel>Required Specialty</AiLabel>
-              <select className={selectCls} value={data.requiredSpecialty} onChange={(e) => update('requiredSpecialty', e.target.value)}>
-                {SPECIALTY_OPTIONS.map((o) => <option key={o}>{o}</option>)}
+              <select
+                className={selectCls}
+                value={data.requiredSpecialty}
+                onChange={(e) => update('requiredSpecialty', e.target.value)}
+              >
+                {specialtyOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
               </select>
             </div>
 

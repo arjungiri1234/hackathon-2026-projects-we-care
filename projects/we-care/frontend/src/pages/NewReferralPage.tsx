@@ -4,6 +4,7 @@ import { Stepper } from '../components/ui/Stepper'
 import { NewReferralStep1 } from '../components/referrals/NewReferralStep1'
 import { NewReferralStep2 } from '../components/referrals/NewReferralStep2'
 import { NewReferralStep3 } from '../components/referrals/NewReferralStep3'
+import { useDoctorProfileLookupsQuery } from '../lib/auth-hooks'
 import { api } from '../lib/axios'
 import type { ExtractedData } from '../types/referral'
 import type { Specialist } from '../types/specialist'
@@ -42,12 +43,14 @@ function toInitials(name: string) {
 
 export default function NewReferralPage() {
   const navigate = useNavigate()
+  const doctorLookupsQuery = useDoctorProfileLookupsQuery()
   const [step, setStep] = useState(1)
   const [clinicalNote, setClinicalNote] = useState('')
   const [extracted, setExtracted] = useState<ExtractedData | null>(null)
   const [specialists, setSpecialists] = useState<Specialist[]>([])
   const [extracting, setExtracting] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const specialtyOptions = doctorLookupsQuery.data?.specialties ?? []
 
   async function handleExtract(note: string) {
     setExtracting(true)
@@ -74,13 +77,24 @@ export default function NewReferralPage() {
     })
     const list = resp.items ?? resp
     setSpecialists(
-      list.map((s: { id: string; full_name: string; specialty: string; hospital: string; phone: string; available: boolean }) => ({
+      list.map((s: {
+        id: string
+        full_name: string
+        avatar_url?: string | null
+        specialty: string
+        hospital: string
+        location?: string
+        phone: string
+        available: boolean
+      }) => ({
         id: s.id,
         name: s.full_name,
         initials: toInitials(s.full_name),
         subspecialty: s.specialty,
         hospital: s.hospital,
+        location: s.location ?? '',
         phone: s.phone,
+        avatarUrl: s.avatar_url ?? null,
         available: s.available ?? true,
       }))
     )
@@ -103,7 +117,7 @@ export default function NewReferralPage() {
         referred_by: specialistId || undefined,
         clinical_notes: clinicalNote,
         diagnosis: extracted.diagnosis,
-        required_specialty: selectedSpecialist?.subspecialty ?? extracted.requiredSpecialty,
+        required_specialty: specialists.find((specialist) => specialist.id === targetDoctorId)?.subspecialty ?? extracted.requiredSpecialty,
         urgency: URGENCY_MAP[extracted.urgency] ?? 'low',
       },
     })
@@ -127,6 +141,7 @@ export default function NewReferralPage() {
         <NewReferralStep2
           clinicalNote={clinicalNote}
           extracted={extracted}
+          specialtyOptions={specialtyOptions}
           onBack={() => setStep(1)}
           onConfirm={handleConfirm}
         />

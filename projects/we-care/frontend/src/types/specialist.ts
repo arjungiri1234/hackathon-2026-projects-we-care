@@ -7,7 +7,9 @@ interface BaseSpecialist {
 export interface Specialist extends BaseSpecialist {
   subspecialty: string
   hospital: string
+  location: string
   phone: string
+  avatarUrl?: string | null
   available: boolean
 }
 
