@@ -1,4 +1,6 @@
+import { randomUUID } from 'crypto';
 import { supabase } from '../lib/supabase';
+import { sendPatientPortalEmail } from './email.service';
 
 export async function createPatientAndReferral(
   doctorId: string,
@@ -84,5 +86,32 @@ export async function updateReferralStatus(
     .single();
 
   if (error) throw new Error(error.message);
+
+  if (status === 'sent') {
+    const { data: referral } = await supabase
+      .from('referrals')
+      .select('patients (full_name, email)')
+      .eq('id', referralId)
+      .single();
+
+    const patientsRaw = referral?.patients as unknown as { full_name: string; email?: string } | { full_name: string; email?: string }[] | null;
+    const patient = Array.isArray(patientsRaw) ? patientsRaw[0] : patientsRaw;
+
+    const token = randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await supabase.from('patient_tokens').insert({
+      token,
+      referral_id: referralId,
+      expires_at: expiresAt.toISOString(),
+    });
+
+    if (patient?.email) {
+      const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+      await sendPatientPortalEmail(patient.email, patient.full_name, `${frontendUrl}/p/${token}`);
+    }
+  }
+
   return data;
 }
