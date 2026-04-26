@@ -16,6 +16,7 @@ const ALLOWED_AVATAR_MIME_TYPES = new Set([
 const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const AVATAR_SIGNED_URL_TTL_SECONDS = 60 * 60;
+const STORAGE_OBJECT_NOT_FOUND = "Object not found";
 
 interface UpdateDoctorProfileInput {
   full_name?: string;
@@ -52,6 +53,9 @@ async function resolveAvatarUrl(avatarValue: string | null) {
     .createSignedUrl(avatarValue, AVATAR_SIGNED_URL_TTL_SECONDS);
 
   if (error) {
+    if (error.message.includes(STORAGE_OBJECT_NOT_FOUND)) {
+      return null;
+    }
     throw new HttpError(500, error.message);
   }
 
