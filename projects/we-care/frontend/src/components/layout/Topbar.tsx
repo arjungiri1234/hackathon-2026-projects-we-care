@@ -11,7 +11,6 @@ interface NavTab {
 const NAV_TABS: NavTab[] = [
   { label: "Inbound", type: "inbound" },
   { label: "Outbound", type: "outbound" },
-  { label: "Pending", type: "pending" },
 ];
 
 export function Topbar() {
