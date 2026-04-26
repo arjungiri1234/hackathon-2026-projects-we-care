@@ -11,7 +11,7 @@ function getTimeline(status: string, createdAt: string) {
   });
 
   return [
-    { id: "created", title: "Referral Created", subtitle: `${created}`, done: true, current: false },
+    { id: "created", title: "Referral Created", subtitle: `${created}`, done: true, current: status === "pending" },
     {
       id: "ready",
       title: "Ready to Book",
@@ -27,6 +27,46 @@ function getTimeline(status: string, createdAt: string) {
       current: status === "accepted",
     },
   ];
+}
+
+function getStatusCard(status: string) {
+  switch (status) {
+    case "pending":
+      return {
+        title: "Referral Pending",
+        subtitle: "Your referral is being processed.",
+        buttonText: "Please wait",
+        buttonDisabled: true,
+      };
+    case "sent":
+      return {
+        title: "Ready to Request",
+        subtitle: "Choose a slot and submit your request.",
+        buttonText: "Request Appointment",
+        buttonDisabled: false,
+      };
+    case "accepted":
+      return {
+        title: "Appointment Confirmed",
+        subtitle: "Your specialist has accepted the request.",
+        buttonText: "View Appointment",
+        buttonDisabled: false,
+      };
+    case "completed":
+      return {
+        title: "Referral Completed",
+        subtitle: "Your appointment has been completed.",
+        buttonText: "View Details",
+        buttonDisabled: false,
+      };
+    default:
+      return {
+        title: "Referral Status",
+        subtitle: "Track your referral progress.",
+        buttonText: "Request Appointment",
+        buttonDisabled: false,
+      };
+  }
 }
 
 function TimelineMarker({ done, current }: { done?: boolean; current?: boolean }) {
@@ -94,13 +134,14 @@ export default function PatientPortalPage() {
   }
 
   const firstName = referral.patients.full_name.split(" ")[0];
-  const specialist = referral.specialist
-  const specialistName = specialist?.full_name ?? 'Unassigned'
-  const specialistSpecialty = specialist?.specialty ?? 'N/A'
-  const specialistHospital = specialist?.hospital ?? 'N/A'
-  const specialistPhone = specialist?.phone
+  const specialist = referral.specialist;
+  const specialistName = specialist?.full_name ?? "Unassigned";
+  const specialistSpecialty = specialist?.specialty ?? "N/A";
+  const specialistHospital = specialist?.hospital ?? "N/A";
+  const specialistPhone = specialist?.phone;
   const timeline = getTimeline(referral.status, referral.created_at);
   const refId = referral.id.slice(0, 5).toUpperCase();
+  const statusCard = getStatusCard(referral.status);
 
   return (
     <div className="min-h-screen bg-base px-4 py-8">
@@ -117,11 +158,9 @@ export default function PatientPortalPage() {
             <div className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold tracking-widest text-muted uppercase">
               Action Required
             </div>
-            <h2 className="mt-3 text-3xl font-semibold text-primary">Ready to Request</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-primary">{statusCard.title}</h2>
             <p className="mt-1 text-sm text-muted">Referral #REF-{refId}</p>
-            <p className="mt-1 text-xs text-muted">
-              After you request a slot, the specialist will approve or decline it.
-            </p>
+            <p className="mt-1 text-xs text-muted">{statusCard.subtitle}</p>
           </section>
 
           <section>
@@ -185,8 +224,13 @@ export default function PatientPortalPage() {
         </div>
 
         <div className="border-t border-border bg-surface px-4 py-4">
-          <Button fullWidth size="lg" onClick={() => navigate("book")}>
-            Request Appointment
+          <Button
+            fullWidth
+            size="lg"
+            onClick={() => navigate("book")}
+            disabled={statusCard.buttonDisabled}
+          >
+            {statusCard.buttonText}
           </Button>
         </div>
       </div>
