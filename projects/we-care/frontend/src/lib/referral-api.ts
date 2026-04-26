@@ -14,11 +14,11 @@ export interface ReferralDetail {
     phone: string | null;
     email: string | null;
   };
-  specialists: {
+  specialist: {
     full_name: string;
     specialty: string;
     hospital: string;
-  };
+  } | null;
   referral_status_history: { status: string; changed_at: string }[];
 }
 
