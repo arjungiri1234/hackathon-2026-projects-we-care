@@ -87,9 +87,10 @@ export default function NewReferralPage() {
     setStep(3)
   }
 
-  async function handleSubmit(specialtyId: string) {
+  async function handleSubmit(specialistId: string) {
     if (!extracted) return
     setSubmitting(true)
+    const selectedSpecialist = specialists.find(s => s.id === specialistId)
     await api.post('/api/referrals', {
       patient: {
         full_name: extracted.patientName,
@@ -99,9 +100,10 @@ export default function NewReferralPage() {
         phone: extracted.phone || undefined,
       },
       referral: {
+        referred_by: specialistId || undefined,
         clinical_notes: clinicalNote,
         diagnosis: extracted.diagnosis,
-        required_specialty: specialists.find(s => s.id === specialtyId)?.subspecialty ?? extracted.requiredSpecialty,
+        required_specialty: selectedSpecialist?.subspecialty ?? extracted.requiredSpecialty,
         urgency: URGENCY_MAP[extracted.urgency] ?? 'low',
       },
     })
