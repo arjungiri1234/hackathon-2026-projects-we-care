@@ -13,7 +13,7 @@ services:
     env_file:
       - .env
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:${PORT:-3000}"
     restart: unless-stopped
 
   frontend:
@@ -31,7 +31,7 @@ services:
       - ./projects/we-care/frontend/tsconfig.app.json:/app/tsconfig.app.json
       - ./projects/we-care/frontend/tsconfig.node.json:/app/tsconfig.node.json
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - VITE_API_URL=http://localhost:${PORT:-3000}
     ports:
       - "5173:5173"
     depends_on:
