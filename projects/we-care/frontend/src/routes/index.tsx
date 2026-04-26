@@ -4,6 +4,7 @@ import DashboardPage from "../pages/DashboardPage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import LoginPage from "../pages/LoginPage";
 import NewReferralPage from "../pages/NewReferralPage";
+import ReferralsPage from "../pages/ReferralsPage";
 import PatientBookingConfirmationPage from "../pages/PatientBookingConfirmationPage";
 import PatientBookingPage from "../pages/PatientBookingPage";
 import PatientBookingReviewPage from "../pages/PatientBookingReviewPage";
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: "/", element: <DashboardPage /> },
+          { path: "/referrals", element: <ReferralsPage /> },
           { path: "/referrals/new", element: <NewReferralPage /> },
           { path: "/referrals/:id", element: <ReferralDetailPage /> },
           { path: "/specialists", element: <SpecialistsPage /> },
