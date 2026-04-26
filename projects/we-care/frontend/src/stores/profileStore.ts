@@ -5,6 +5,7 @@ import type { DoctorProfile } from "../lib/auth-api";
 interface ProfileState {
   fullName: string;
   email: string;
+  contactNumber: string;
   specialty: string;
   licenseNumber: string;
   hospital: string;
@@ -19,6 +20,7 @@ export const useProfileStore = create<ProfileState>()(
     (set) => ({
       fullName: "",
       email: "",
+      contactNumber: "",
       specialty: "",
       licenseNumber: "",
       hospital: "",
@@ -28,6 +30,7 @@ export const useProfileStore = create<ProfileState>()(
         set({
           fullName: doctor.full_name ?? "",
           email: doctor.email ?? "",
+          contactNumber: doctor.contact_number ?? "",
           specialty: doctor.specialty ?? "",
           licenseNumber: doctor.license_number ?? "",
           hospital: doctor.hospital ?? "",
@@ -37,6 +40,7 @@ export const useProfileStore = create<ProfileState>()(
         set({
           fullName: "",
           email: "",
+          contactNumber: "",
           specialty: "",
           licenseNumber: "",
           hospital: "",

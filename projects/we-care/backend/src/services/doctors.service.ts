@@ -1,5 +1,7 @@
 import { supabase } from "../lib/supabase";
+import { HttpError } from "../lib/http-error";
 import {
+  listLookupNames,
   normalizeLookupValue,
   resolveLookupId,
   resolveLookupName,
@@ -12,10 +14,13 @@ const ALLOWED_AVATAR_MIME_TYPES = new Set([
 ]);
 
 const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const AVATAR_SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 interface UpdateDoctorProfileInput {
   full_name?: string;
   email?: string;
+  contact_number?: string;
   specialty?: string;
   license_number?: string;
   hospital?: string;
@@ -25,6 +30,7 @@ type DoctorRow = {
   id: string;
   full_name: string;
   email: string;
+  contact_number: string | null;
   license_number: string | null;
   avatar_url: string | null;
   created_at: string;
@@ -32,20 +38,42 @@ type DoctorRow = {
   hospital_id: string | null;
 };
 
+async function resolveAvatarUrl(avatarValue: string | null) {
+  if (!avatarValue) {
+    return null;
+  }
+
+  if (avatarValue.startsWith("http://") || avatarValue.startsWith("https://")) {
+    return avatarValue;
+  }
+
+  const { data, error } = await supabase.storage
+    .from("doctor-profiles")
+    .createSignedUrl(avatarValue, AVATAR_SIGNED_URL_TTL_SECONDS);
+
+  if (error) {
+    throw new HttpError(500, error.message);
+  }
+
+  return data.signedUrl;
+}
+
 async function mapDoctorProfile(row: DoctorRow) {
-  const [specialty, hospital] = await Promise.all([
+  const [specialty, hospital, avatarUrl] = await Promise.all([
     resolveLookupName("specialties", row.specialty_id),
-    resolveLookupName("hospital", row.hospital_id),
+    resolveLookupName("hospitals", row.hospital_id),
+    resolveAvatarUrl(row.avatar_url),
   ]);
 
   return {
     id: row.id,
     full_name: row.full_name,
     email: row.email,
+    contact_number: row.contact_number,
     specialty,
     license_number: row.license_number,
     hospital,
-    avatar_url: row.avatar_url,
+    avatar_url: avatarUrl,
     created_at: row.created_at,
   };
 }
@@ -56,11 +84,14 @@ export async function uploadAvatar(
   mimeType: string,
 ) {
   if (!ALLOWED_AVATAR_MIME_TYPES.has(mimeType)) {
-    throw new Error("Unsupported avatar type. Allowed: JPEG, PNG, WEBP");
+    throw new HttpError(
+      400,
+      "Unsupported avatar type. Allowed: JPEG, PNG, WEBP",
+    );
   }
 
   if (fileBuffer.length > MAX_AVATAR_SIZE_BYTES) {
-    throw new Error("Avatar file is too large. Maximum size is 5MB");
+    throw new HttpError(400, "Avatar file is too large. Maximum size is 5MB");
   }
 
   const fileExtension = mimeType.split("/")[1] ?? "jpg";
@@ -73,22 +104,27 @@ export async function uploadAvatar(
       upsert: true,
     });
 
-  if (uploadError) throw new Error(uploadError.message);
+  if (uploadError) throw new HttpError(500, uploadError.message);
 
-  const { data } = supabase.storage
-    .from("doctor-profiles")
-    .getPublicUrl(filePath);
-
-  const avatarUrl = `${data.publicUrl}?v=${Date.now()}`;
+  const avatarUrl = await resolveAvatarUrl(filePath);
 
   const { error: updateError } = await supabase
     .from("doctors")
-    .update({ avatar_url: avatarUrl })
+    .update({ avatar_url: filePath })
     .eq("id", doctorId);
 
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) throw new HttpError(500, updateError.message);
 
   return { avatar_url: avatarUrl };
+}
+
+export async function getDoctorProfileLookups() {
+  const [specialties, hospitals] = await Promise.all([
+    listLookupNames("specialties"),
+    listLookupNames("hospitals"),
+  ]);
+
+  return { specialties, hospitals };
 }
 
 export async function updateDoctorProfile(
@@ -98,11 +134,26 @@ export async function updateDoctorProfile(
   const nextUpdates: Record<string, string | null> = {};
 
   if (updates.full_name !== undefined) {
-    nextUpdates.full_name = updates.full_name.trim();
+    const fullName = updates.full_name.trim();
+    if (!fullName) {
+      throw new HttpError(400, "Full name is required");
+    }
+    nextUpdates.full_name = fullName;
   }
 
   if (updates.email !== undefined) {
-    nextUpdates.email = updates.email.trim();
+    const email = updates.email.trim().toLowerCase();
+    if (!email) {
+      throw new HttpError(400, "Email is required");
+    }
+    if (!EMAIL_PATTERN.test(email)) {
+      throw new HttpError(400, "Email address is invalid");
+    }
+    nextUpdates.email = email;
+  }
+
+  if (updates.contact_number !== undefined) {
+    nextUpdates.contact_number = normalizeLookupValue(updates.contact_number);
   }
 
   if (updates.specialty !== undefined) {
@@ -114,7 +165,7 @@ export async function updateDoctorProfile(
 
   if (updates.hospital !== undefined) {
     nextUpdates.hospital_id = await resolveLookupId(
-      "hospital",
+      "hospitals",
       updates.hospital,
     );
   }
@@ -123,16 +174,30 @@ export async function updateDoctorProfile(
     nextUpdates.license_number = normalizeLookupValue(updates.license_number);
   }
 
+  if (!Object.keys(nextUpdates).length) {
+    throw new HttpError(400, "At least one valid profile field is required");
+  }
+
   const { data, error } = await supabase
     .from("doctors")
     .update(nextUpdates)
     .eq("id", doctorId)
     .select(
-      "id, full_name, email, specialty_id, license_number, avatar_url, hospital_id, created_at",
+      "id, full_name, email, contact_number, specialty_id, license_number, avatar_url, hospital_id, created_at",
     )
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === "23505") {
+      throw new HttpError(409, "A doctor with that email already exists");
+    }
+    throw new HttpError(500, error.message);
+  }
+
+  if (!data) {
+    throw new HttpError(404, "Doctor profile not found");
+  }
+
   return await mapDoctorProfile(data as DoctorRow);
 }
 
@@ -140,11 +205,21 @@ export async function getDoctorProfile(doctorId: string) {
   const { data, error } = await supabase
     .from("doctors")
     .select(
-      "id, full_name, email, specialty_id, license_number, avatar_url, hospital_id, created_at",
+      "id, full_name, email, contact_number, specialty_id, license_number, avatar_url, hospital_id, created_at",
     )
     .eq("id", doctorId)
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === "PGRST116") {
+      throw new HttpError(404, "Doctor profile not found");
+    }
+    throw new HttpError(500, error.message);
+  }
+
+  if (!data) {
+    throw new HttpError(404, "Doctor profile not found");
+  }
+
   return await mapDoctorProfile(data as DoctorRow);
 }

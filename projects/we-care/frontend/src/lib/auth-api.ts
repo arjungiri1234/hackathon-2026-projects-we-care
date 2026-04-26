@@ -7,6 +7,7 @@ export interface DoctorProfile {
   id: string;
   email: string;
   full_name: string;
+  contact_number?: string | null;
   specialty?: string | null;
   license_number?: string | null;
   hospital?: string | null;
@@ -32,9 +33,15 @@ interface SignInPayload {
 export interface UpdateDoctorProfilePayload {
   full_name?: string;
   email?: string;
+  contact_number?: string;
   specialty?: string;
   license_number?: string;
   hospital?: string;
+}
+
+export interface DoctorProfileLookups {
+  specialties: string[];
+  hospitals: string[];
 }
 
 export async function signIn(payload: SignInPayload) {
@@ -87,6 +94,13 @@ export async function getDoctorProfile() {
   return data;
 }
 
+export async function getDoctorProfileLookups() {
+  const { data } = await api.get<DoctorProfileLookups>(
+    "/api/v1/doctors/lookups",
+  );
+  return data;
+}
+
 export async function updateDoctorProfile(payload: UpdateDoctorProfilePayload) {
   const { data } = await api.patch<DoctorProfile>(
     "/api/v1/doctors/profile",
@@ -110,6 +124,10 @@ export async function uploadDoctorAvatar(file: File) {
 
 export function getApiErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError<{ error?: string; message?: string }>(error)) {
+    if (!error.response) {
+      return "Unable to reach the server. Check your connection and try again.";
+    }
+
     return (
       error.response?.data?.error ?? error.response?.data?.message ?? fallback
     );

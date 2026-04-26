@@ -23,7 +23,7 @@ export async function getReferralByToken(token: string) {
         full_name,
         phone,
         specialties(name),
-        hospital(name)
+        hospitals(name)
       )
     `,
     )
@@ -42,7 +42,7 @@ export async function getReferralByToken(token: string) {
       ? {
           ...specialist,
           specialty: extractLookupName(specialist.specialties) ?? "",
-          hospital: extractLookupName(specialist.hospital) ?? "",
+          hospital: extractLookupName(specialist.hospitals) ?? "",
         }
       : specialist,
   };

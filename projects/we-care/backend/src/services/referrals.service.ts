@@ -52,7 +52,7 @@ export async function getReferralsByDoctor(doctorId: string) {
         id,
         full_name,
         specialties(name),
-        hospital(name)
+        hospitals(name)
       )
     `,
     )
@@ -71,7 +71,7 @@ export async function getReferralsByDoctor(doctorId: string) {
         ? {
             ...specialist,
             specialty: extractLookupName(specialist.specialties) ?? "",
-            hospital: extractLookupName(specialist.hospital) ?? "",
+            hospital: extractLookupName(specialist.hospitals) ?? "",
           }
         : specialist,
     };
@@ -90,7 +90,7 @@ export async function getReferralById(referralId: string, doctorId: string) {
       specialists (
         *,
         specialties(name),
-        hospital(name)
+        hospitals(name)
       ),
       referral_status_history (status, changed_at)
     `,
@@ -110,7 +110,7 @@ export async function getReferralById(referralId: string, doctorId: string) {
       ? {
           ...specialist,
           specialty: extractLookupName(specialist.specialties) ?? "",
-          hospital: extractLookupName(specialist.hospital) ?? "",
+          hospital: extractLookupName(specialist.hospitals) ?? "",
         }
       : specialist,
   };

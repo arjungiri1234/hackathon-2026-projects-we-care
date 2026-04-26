@@ -23,6 +23,7 @@ CREATE TABLE doctors (
   id         UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name  TEXT NOT NULL,
   email      TEXT NOT NULL UNIQUE,
+  contact_number TEXT,
   specialty_id UUID REFERENCES specialties(id),
   license_number TEXT,
   avatar_url TEXT,

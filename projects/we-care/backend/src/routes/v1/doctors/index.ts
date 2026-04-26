@@ -3,6 +3,7 @@ import multer from "multer";
 import { authMiddleware } from "../../../middleware/auth";
 import {
   getDoctorProfile,
+  getDoctorProfileLookups,
   updateDoctorProfile,
   uploadAvatar,
 } from "../../../services/doctors.service";
@@ -10,6 +11,15 @@ import { AuthRequest } from "../../../types";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+router.get(
+  "/lookups",
+  authMiddleware,
+  async (_req: AuthRequest, res: Response) => {
+    const lookups = await getDoctorProfileLookups();
+    res.status(200).json(lookups);
+  },
+);
 
 router.get(
   "/profile",
@@ -24,11 +34,19 @@ router.patch(
   "/profile",
   authMiddleware,
   async (req: AuthRequest, res: Response) => {
-    const { full_name, email, specialty, license_number, hospital } = req.body;
+    const {
+      full_name,
+      email,
+      contact_number,
+      specialty,
+      license_number,
+      hospital,
+    } = req.body;
 
     const hasAtLeastOneField =
       full_name !== undefined ||
       email !== undefined ||
+      contact_number !== undefined ||
       specialty !== undefined ||
       license_number !== undefined ||
       hospital !== undefined;
@@ -41,6 +59,7 @@ router.patch(
     const updates = {
       full_name,
       email,
+      contact_number,
       specialty,
       license_number,
       hospital,

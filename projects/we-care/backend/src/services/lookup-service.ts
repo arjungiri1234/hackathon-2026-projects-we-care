@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabase";
 
-type LookupTable = "specialties" | "hospital";
+type LookupTable = "specialties" | "hospitals";
 
 export function normalizeLookupValue(value?: string | null) {
   const trimmed = value?.trim();
@@ -12,6 +12,16 @@ export function extractLookupName(
 ) {
   if (!relation) return null;
   return Array.isArray(relation) ? (relation[0]?.name ?? null) : relation.name;
+}
+
+export async function listLookupNames(table: LookupTable) {
+  const { data, error } = await supabase
+    .from(table)
+    .select("name")
+    .order("name", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data.map((row) => row.name as string);
 }
 
 export async function resolveLookupId(

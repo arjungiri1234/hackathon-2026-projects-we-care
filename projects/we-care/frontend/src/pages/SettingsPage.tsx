@@ -1,7 +1,10 @@
 import { ChevronDown } from "lucide-react";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { StatusToast } from "../components/ui/StatusToast";
 import { Button } from "../components/ui/Button";
 import {
+  getDoctorProfile,
+  getDoctorProfileLookups,
   getApiErrorMessage,
   updateDoctorProfile,
   uploadDoctorAvatar,
@@ -9,51 +12,72 @@ import {
 import { useAuthStore } from "../stores/authStore";
 import { useProfileStore } from "../stores/profileStore";
 
-const SPECIALTIES = [
-  "Cardiology",
-  "Dermatology",
-  "Gastroenterology",
-  "Neurology",
-  "Oncology",
-  "Orthopedics",
-  "Pediatrics",
-  "Psychiatry",
-  "Radiology",
-  "Urology",
-];
+const ALLOWED_AVATAR_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
 
 interface ProfileForm {
   fullName: string;
   email: string;
+  contactNumber: string;
   licenseNumber: string;
   specialty: string;
   hospital: string;
+}
+
+interface StatusMessage {
+  message: string;
+  tone: "success" | "error";
+}
+
+function validateProfileForm(form: ProfileForm) {
+  if (!form.fullName.trim()) {
+    return "Full name is required.";
+  }
+
+  const email = form.email.trim();
+  if (!email) {
+    return "Email is required.";
+  }
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(email)) {
+    return "Enter a valid email address.";
+  }
+
+  return null;
 }
 
 export default function SettingsPage() {
   const {
     fullName: storedName,
     email: storedEmail,
+    contactNumber: storedContactNumber,
     specialty: storedSpecialty,
     licenseNumber: storedLicenseNumber,
     hospital: storedHospital,
     avatarUrl: storedAvatar,
     setProfile,
   } = useProfileStore();
-  const doctor = useAuthStore((s) => s.doctor);
   const setDoctor = useAuthStore((s) => s.setDoctor);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(storedAvatar);
   const [form, setForm] = useState<ProfileForm>({
     fullName: storedName,
     email: storedEmail,
+    contactNumber: storedContactNumber,
     licenseNumber: storedLicenseNumber,
     specialty: storedSpecialty,
     hospital: storedHospital,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [isLoadingLookups, setIsLoadingLookups] = useState(true);
+  const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(null);
+  const [specialtyOptions, setSpecialtyOptions] = useState<string[]>([]);
+  const [hospitalOptions, setHospitalOptions] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -61,12 +85,14 @@ export default function SettingsPage() {
     setForm({
       fullName: storedName,
       email: storedEmail,
+      contactNumber: storedContactNumber,
       licenseNumber: storedLicenseNumber,
       specialty: storedSpecialty,
       hospital: storedHospital,
     });
   }, [
     storedAvatar,
+    storedContactNumber,
     storedEmail,
     storedHospital,
     storedLicenseNumber,
@@ -74,10 +100,67 @@ export default function SettingsPage() {
     storedSpecialty,
   ]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadLookups() {
+      setIsLoadingLookups(true);
+      setStatusMessage(null);
+
+      try {
+        const lookups = await getDoctorProfileLookups();
+        if (!isMounted) {
+          return;
+        }
+
+        setSpecialtyOptions(lookups.specialties);
+        setHospitalOptions(lookups.hospitals);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setStatusMessage({
+          message: getApiErrorMessage(
+            error,
+            "Unable to load profile options. Please refresh and try again.",
+          ),
+          tone: "error",
+        });
+      } finally {
+        if (isMounted) {
+          setIsLoadingLookups(false);
+        }
+      }
+    }
+
+    void loadLookups();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  async function syncProfileFromBackend(successMessage: string) {
+    const refreshedDoctor = await getDoctorProfile();
+
+    setDoctor(refreshedDoctor);
+    setProfile({
+      fullName: refreshedDoctor.full_name,
+      email: refreshedDoctor.email,
+      contactNumber: refreshedDoctor.contact_number ?? "",
+      specialty: refreshedDoctor.specialty ?? "",
+      licenseNumber: refreshedDoctor.license_number ?? "",
+      hospital: refreshedDoctor.hospital ?? "",
+      avatarUrl: refreshedDoctor.avatar_url ?? null,
+    });
+    setAvatarUrl(refreshedDoctor.avatar_url ?? null);
+    setStatusMessage({ message: successMessage, tone: "success" });
+  }
+
   function update(field: keyof ProfileForm, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
-    setSaveError(null);
-    setSaveSuccess(null);
+    setStatusMessage(null);
   }
 
   async function handleImageChange(e: ChangeEvent<HTMLInputElement>) {
@@ -86,25 +169,38 @@ export default function SettingsPage() {
       return;
     }
 
-    setSaveError(null);
-    setSaveSuccess(null);
+    if (!ALLOWED_AVATAR_MIME_TYPES.has(file.type)) {
+      setStatusMessage({
+        message: "Unsupported image type. Please use JPEG, PNG, or WEBP.",
+        tone: "error",
+      });
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_SIZE_BYTES) {
+      setStatusMessage({
+        message: "Profile image must be 5MB or smaller.",
+        tone: "error",
+      });
+      e.target.value = "";
+      return;
+    }
+
+    setStatusMessage(null);
     setIsUploadingImage(true);
 
     try {
-      const result = await uploadDoctorAvatar(file);
-      setAvatarUrl(result.avatar_url);
-      setProfile({ avatarUrl: result.avatar_url });
-      if (doctor) {
-        setDoctor({ ...doctor, avatar_url: result.avatar_url });
-      }
-      setSaveSuccess("Profile image updated successfully.");
+      await uploadDoctorAvatar(file);
+      await syncProfileFromBackend("Profile image updated successfully.");
     } catch (error) {
-      setSaveError(
-        getApiErrorMessage(
+      setStatusMessage({
+        message: getApiErrorMessage(
           error,
           "Unable to upload profile image. Please try again.",
         ),
-      );
+        tone: "error",
+      });
     } finally {
       setIsUploadingImage(false);
       e.target.value = "";
@@ -112,14 +208,21 @@ export default function SettingsPage() {
   }
 
   async function handleSave() {
-    setSaveError(null);
-    setSaveSuccess(null);
+    setStatusMessage(null);
+
+    const validationError = validateProfileForm(form);
+    if (validationError) {
+      setStatusMessage({ message: validationError, tone: "error" });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
       const updatedDoctor = await updateDoctorProfile({
         full_name: form.fullName.trim(),
-        email: form.email.trim(),
+        email: form.email.trim().toLowerCase(),
+        contact_number: form.contactNumber.trim(),
         license_number: form.licenseNumber.trim(),
         specialty: form.specialty.trim(),
         hospital: form.hospital.trim(),
@@ -129,16 +232,25 @@ export default function SettingsPage() {
       setProfile({
         fullName: updatedDoctor.full_name,
         email: updatedDoctor.email,
+        contactNumber: updatedDoctor.contact_number ?? "",
         specialty: updatedDoctor.specialty ?? "",
         licenseNumber: updatedDoctor.license_number ?? "",
         hospital: updatedDoctor.hospital ?? "",
-        avatarUrl: updatedDoctor.avatar_url ?? avatarUrl,
+        avatarUrl: updatedDoctor.avatar_url ?? null,
       });
-      setSaveSuccess("Profile details updated successfully.");
+      setAvatarUrl(updatedDoctor.avatar_url ?? null);
+      setStatusMessage({
+        message: "Profile details updated successfully.",
+        tone: "success",
+      });
     } catch (error) {
-      setSaveError(
-        getApiErrorMessage(error, "Unable to save profile. Please try again."),
-      );
+      setStatusMessage({
+        message: getApiErrorMessage(
+          error,
+          "Unable to save profile. Please try again.",
+        ),
+        tone: "error",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -200,13 +312,6 @@ export default function SettingsPage() {
         </div>
 
         <div className="p-6 space-y-5">
-          {saveError ? (
-            <p className="text-sm text-red-500">{saveError}</p>
-          ) : null}
-          {saveSuccess ? (
-            <p className="text-sm text-emerald-600">{saveSuccess}</p>
-          ) : null}
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-primary mb-1.5">
@@ -235,6 +340,17 @@ export default function SettingsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-primary mb-1.5">
+                Contact Number
+              </label>
+              <input
+                className={inputCls}
+                value={form.contactNumber}
+                onChange={(e) => update("contactNumber", e.target.value)}
+                placeholder="(555) 123-4567"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-primary mb-1.5">
                 Medical License Number
               </label>
               <input
@@ -256,9 +372,10 @@ export default function SettingsPage() {
                   className={selectCls}
                   value={form.specialty}
                   onChange={(e) => update("specialty", e.target.value)}
+                  disabled={isLoadingLookups}
                 >
                   <option value="">Select a specialty...</option>
-                  {SPECIALTIES.map((s) => (
+                  {specialtyOptions.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
@@ -274,12 +391,29 @@ export default function SettingsPage() {
               <label className="block text-sm font-medium text-primary mb-1.5">
                 Hospital / Clinic Name
               </label>
-              <input
-                className={inputCls}
-                value={form.hospital}
-                onChange={(e) => update("hospital", e.target.value)}
-                placeholder="Primary affiliation"
-              />
+              <div className="relative">
+                <select
+                  className={selectCls}
+                  value={form.hospital}
+                  onChange={(e) => update("hospital", e.target.value)}
+                  disabled={isLoadingLookups}
+                >
+                  <option value="">
+                    {isLoadingLookups
+                      ? "Loading hospitals..."
+                      : "Select a hospital..."}
+                  </option>
+                  {hospitalOptions.map((hospital) => (
+                    <option key={hospital} value={hospital}>
+                      {hospital}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={15}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -290,6 +424,14 @@ export default function SettingsPage() {
           </Button>
         </div>
       </div>
+
+      {statusMessage ? (
+        <StatusToast
+          message={statusMessage.message}
+          tone={statusMessage.tone}
+          onClose={() => setStatusMessage(null)}
+        />
+      ) : null}
     </div>
   );
 }

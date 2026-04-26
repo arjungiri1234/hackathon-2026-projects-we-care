@@ -5,7 +5,7 @@ export async function getAvailableSpecialists(specialty?: string) {
   let query = supabase
     .from("specialists")
     .select(
-      "id, full_name, phone, available, specialties(name), hospital(name)",
+      "id, full_name, phone, available, specialties(name), hospitals(name)",
     )
     .eq("available", true)
     .order("full_name");
@@ -18,7 +18,7 @@ export async function getAvailableSpecialists(specialty?: string) {
       id: specialist.id,
       full_name: specialist.full_name,
       specialty: extractLookupName(specialist.specialties) ?? "",
-      hospital: extractLookupName(specialist.hospital) ?? "",
+      hospital: extractLookupName(specialist.hospitals) ?? "",
       phone: specialist.phone,
       available: specialist.available,
     }))
