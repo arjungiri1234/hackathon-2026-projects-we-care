@@ -34,14 +34,13 @@ router.post("/", authMiddleware, async (req: AuthRequest, res: Response) => {
 
   if (
     !patient?.full_name ||
-    !referral?.doctor_id ||
     !referral?.clinical_notes
   ) {
     res
       .status(400)
       .json({
         error:
-          "patient.full_name, referral.doctor_id and referral.clinical_notes are required",
+          "patient.full_name and referral.clinical_notes are required",
       });
     return;
   }
