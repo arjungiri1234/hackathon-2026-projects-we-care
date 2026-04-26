@@ -5,6 +5,7 @@ import extractRouter from './routes/extract';
 import specialistsRouter from './routes/specialists';
 import referralsRouter from './routes/referrals';
 import patientRouter from './routes/patient';
+import authRouter from './routes/v1/auth';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
