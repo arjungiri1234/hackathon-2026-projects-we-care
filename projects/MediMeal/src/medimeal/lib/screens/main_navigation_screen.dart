@@ -71,6 +71,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         userMedications.add(result);
       });
 
+
       await NotificationService.scheduleDailyMedicationReminder(
         id: result.id.hashCode,
         medicationName: result.template.name,

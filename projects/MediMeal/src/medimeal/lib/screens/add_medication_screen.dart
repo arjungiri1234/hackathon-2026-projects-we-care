@@ -82,7 +82,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<MedicineTemplate>(
-              value: selectedTemplate,
+              initialValue: selectedTemplate,
               items: widget.templates
                   .map(
                     (template) => DropdownMenuItem(
