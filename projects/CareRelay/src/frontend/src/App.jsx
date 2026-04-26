@@ -542,45 +542,55 @@ function MedicationPanelDense({ medications }) {
     }
   }
 
-  function getWarningForMed(medName) {
-    if (!warnings) return null;
-    const short = shortMedName(medName).toLowerCase();
-    return warnings.find((w) => w.medication.toLowerCase().includes(short) || short.includes(w.medication.toLowerCase()));
-  }
-
   return (
-    <div className="panel meds-panel">
-      <div className="panel-header">
-        <h3>Current Medications</h3>
-        {!warnings ? (
-          <button className="spec-btn" onClick={checkWarnings} disabled={loading} style={{ padding: "4px 10px", display: "flex", gap: "4px" }}>
-            {loading ? <Loader2 size={12} className="spin" /> : <AlertTriangle size={12} />}
-            {loading ? "Checking..." : "FDA Check"}
-          </button>
-        ) : (
-          <span className="status-badge" style={{ background: "var(--green-dim)", color: "var(--green)" }}>✓ FDA Checked</span>
-        )}
-      </div>
-      <div className="encounters-list">
-        {medications.slice(0, 8).map((med) => {
-          const warn = getWarningForMed(med.name);
-          return (
-            <div className="encounter-row" key={med.name} style={{ flexDirection: "column", gap: "4px" }}>
+    <>
+      <div className="panel meds-panel">
+        <div className="panel-header">
+          <h3>Current Medications</h3>
+          {!warnings ? (
+            <button className="spec-btn" onClick={checkWarnings} disabled={loading} style={{ padding: "4px 10px", display: "flex", gap: "4px" }}>
+              {loading ? <Loader2 size={12} className="spin" /> : <AlertTriangle size={12} />}
+              {loading ? "Checking..." : "FDA Check"}
+            </button>
+          ) : (
+            <span className="status-badge" style={{ background: "var(--green-dim)", color: "var(--green)" }}>✓ FDA Checked</span>
+          )}
+        </div>
+        <div className="encounters-list">
+          {medications.slice(0, 8).map((med) => (
+            <div className="encounter-row" key={med.name}>
               <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
                 <strong style={{ color: "var(--text-primary)" }}>{shortMedName(med.name)}</strong>
                 <span className="enc-spec-badge pcp">{med.status}</span>
               </div>
-              {warn && (
-                <div style={{ background: "var(--orange-dim)", color: "var(--orange)", padding: "6px 8px", borderRadius: "4px", fontSize: "11px", marginTop: "4px", display: "flex", gap: "6px", alignItems: "flex-start" }}>
-                  <AlertTriangle size={12} style={{ flexShrink: 0, marginTop: "1px" }} />
-                  <span>{warn.interaction || warn.warning}</span>
-                </div>
-              )}
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
-    </div>
+
+      {warnings && (
+        <div className="panel fda-parallel-panel" style={{ border: "1px solid rgba(245, 158, 11, 0.4)", background: "#fff" }}>
+          <div className="panel-header">
+            <h3 style={{ color: "var(--orange)", display: "flex", alignItems: "center", gap: "6px" }}>
+              <AlertTriangle size={14} /> FDA Warnings
+            </h3>
+            <span className="panel-count">{warnings.length} issues</span>
+          </div>
+          <div className="encounters-list">
+            {warnings.length === 0 ? (
+              <p style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>No OpenFDA warnings found for current regimen.</p>
+            ) : (
+              warnings.map((warn, idx) => (
+                <div className="insight warn" key={idx} style={{ marginBottom: "8px" }}>
+                  <span className="insight-tag">{warn.medication}</span>
+                  <div className="insight-text">{warn.interaction || warn.warning}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
