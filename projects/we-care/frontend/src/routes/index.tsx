@@ -5,8 +5,8 @@ import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 import DashboardPage from '../pages/DashboardPage'
 import NewReferralPage from '../pages/NewReferralPage'
 import ReferralDetailPage from '../pages/ReferralDetailPage'
+import SpecialistsPage from '../pages/SpecialistsPage'
 import {
-  SpecialistsPage,
   PatientPortalPage,
   NotFoundPage,
 } from '../pages/placeholders'
