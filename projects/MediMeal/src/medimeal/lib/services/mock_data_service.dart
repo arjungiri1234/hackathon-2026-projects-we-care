@@ -1,31 +1,50 @@
-import 'package:medimeal/models/medications.dart';
+import '../models/medicine_template.dart';
 
 class MockDataService {
-  static List<Medication> getMedications() {
-    return [
-      Medication(
+  static List<MedicineTemplate> getMedicineTemplates() {
+    return const [
+      MedicineTemplate(
         id: '1',
-        name: 'Morning Medication A',
-        dosage: '1 tablet',
-        time: '6:00 AM',
-        instructions: 'Take as directed',
+        name: 'Levothyroxine',
+        dosage: '50 mcg',
         workflowType: 'timing_sensitive',
+        waitBeforeMealSeconds: 1800,
+        autoStartWorkflow: true,
+        userHeadline: 'Your next meal timing matters',
+        userWhatHappened: 'You logged your morning medication.',
+        userWhatMattersNow:
+            'Wait before eating so your next meal fits the current timing window.',
+        userNextAction:
+            'You can prepare a meal now, but wait until the reminder before eating.',
       ),
-      Medication(
+      MedicineTemplate(
         id: '2',
-        name: 'Medication B',
-        dosage: '1 tablet',
-        time: '9:00 AM',
-        instructions: 'Take as directed',
-        workflowType: 'hydration_support',
+        name: 'Amoxicillin',
+        dosage: '500 mg',
+        workflowType: 'support_routine',
+        waitBeforeMealSeconds: null,
+        autoStartWorkflow: false,
+        userHeadline: 'Stay on track today',
+        userWhatHappened: 'You logged your medication for today.',
+        userWhatMattersNow:
+            'A support routine can help you stay consistent for the rest of the day.',
+        userNextAction:
+            'Start a support routine and choose a simple meal that fits today.',
       ),
-      Medication(
+      MedicineTemplate(
         id: '3',
-        name: 'Medication C',
-        dosage: '1 tablet',
-        time: '1:00 PM',
-        instructions: 'Take as directed',
-        workflowType: 'weekly_limit_tracking',
+        name: 'Allopurinol',
+        dosage: '100 mg',
+        workflowType: 'weekly_tracking',
+        waitBeforeMealSeconds: null,
+        autoStartWorkflow: false,
+        userHeadline: 'This week’s choices affect future suggestions',
+        userWhatHappened:
+            'You logged your medication and weekly tracking is active.',
+        userWhatMattersNow:
+            'This week’s previous choices affect what the app should suggest next.',
+        userNextAction:
+            'Choose meals that stay within your remaining flexibility for the week.',
       ),
     ];
   }

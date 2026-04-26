@@ -1,9 +1,7 @@
-class Medication {
+class MedicineTemplate {
   final String id;
   final String name;
   final String dosage;
-  final String time;
-  final String instructions;
   final String workflowType;
 
   final int? waitBeforeMealSeconds;
@@ -14,12 +12,10 @@ class Medication {
   final String userWhatMattersNow;
   final String userNextAction;
 
-  Medication({
+  const MedicineTemplate({
     required this.id,
     required this.name,
     required this.dosage,
-    required this.time,
-    required this.instructions,
     required this.workflowType,
     this.waitBeforeMealSeconds,
     required this.autoStartWorkflow,
