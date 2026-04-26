@@ -3,15 +3,15 @@ import { Bell, Search, Settings } from 'lucide-react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 
-interface FilterTab {
+interface NavTab {
   label: string
-  filter: string // maps to ?filter= value
+  type: string
 }
 
-const FILTER_TABS: FilterTab[] = [
-  { label: 'Inbound', filter: 'ACCEPTED' },
-  { label: 'Outbound', filter: 'SENT' },
-  { label: 'Pending', filter: 'PENDING' },
+const NAV_TABS: NavTab[] = [
+  { label: 'Inbound', type: 'inbound' },
+  { label: 'Outbound', type: 'outbound' },
+  { label: 'Pending', type: 'pending' },
 ]
 
 export function Topbar() {
@@ -21,14 +21,10 @@ export function Topbar() {
   const clearAuth = useAuthStore((s) => s.clearAuth)
   const searchRef = useRef<HTMLInputElement>(null)
 
-  const activeFilter = searchParams.get('filter')
+  const activeType = searchParams.get('type')
 
-  function handleTabClick(filter: string) {
-    navigate(`/referrals?filter=${filter}`)
-  }
-
-  function handleQuickSearch() {
-    searchRef.current?.focus()
+  function handleTabClick(type: string) {
+    navigate(`/referrals?type=${type}`)
   }
 
   function handleLogout() {
@@ -36,8 +32,7 @@ export function Topbar() {
     navigate('/login', { replace: true })
   }
 
-  const isTabActive = (filter: string) =>
-    pathname === '/referrals' && activeFilter === filter
+  const isActive = (type: string) => pathname === '/referrals' && activeType === type
 
   return (
     <header className="flex items-center gap-4 border-b border-border bg-surface px-6 py-3">
@@ -56,22 +51,20 @@ export function Topbar() {
       </div>
 
       <nav className="flex items-center gap-1 text-sm font-medium">
-        {FILTER_TABS.map(({ label, filter }) => (
+        {NAV_TABS.map(({ label, type }) => (
           <button
-            key={label}
-            onClick={() => handleTabClick(filter)}
+            key={type}
+            onClick={() => handleTabClick(type)}
             className={[
               'rounded px-3 py-1.5 transition-colors',
-              isTabActive(filter)
-                ? 'text-accent font-semibold'
-                : 'text-muted hover:text-primary',
+              isActive(type) ? 'text-accent font-semibold' : 'text-muted hover:text-primary',
             ].join(' ')}
           >
             {label}
           </button>
         ))}
         <button
-          onClick={handleQuickSearch}
+          onClick={() => searchRef.current?.focus()}
           className="rounded px-3 py-1.5 text-muted transition-colors hover:text-primary"
         >
           Quick Search

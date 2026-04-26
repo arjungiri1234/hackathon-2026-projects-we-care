@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { Button } from '../components/ui/Button'
@@ -15,17 +16,41 @@ const REFERRALS: Referral[] = [
   { id: '8', patient: 'Tom Nguyen', diagnosis: 'Unexplained weight loss', specialty: 'Oncology', specialist: 'Unassigned', urgency: 'HIGH', status: 'PENDING', date: 'Oct 11, 2023' },
 ]
 
+// Statuses that belong to each directional view
+const TYPE_STATUSES: Record<string, ReferralStatus[]> = {
+  inbound: ['PENDING', 'ACCEPTED'],   // referrals coming TO you
+  outbound: ['SENT', 'COMPLETED'],    // referrals you sent OUT
+  pending: ['PENDING'],               // universal to-do
+}
+
+const TYPE_LABELS: Record<string, { title: string; subtitle: string }> = {
+  inbound: { title: 'Inbound Referrals', subtitle: 'Patients being referred to you by another provider.' },
+  outbound: { title: 'Outbound Referrals', subtitle: 'Patients you referred to another specialist or facility.' },
+  pending: { title: 'Pending Referrals', subtitle: 'Referrals awaiting action — your primary to-do list.' },
+}
+
 export default function ReferralsPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const initialFilter = (searchParams.get('filter') as ReferralStatus | null) ?? null
+  const type = searchParams.get('type') ?? ''
+
+  const referrals = useMemo(() => {
+    const statuses = TYPE_STATUSES[type]
+    if (!statuses) return REFERRALS
+    return REFERRALS.filter((r) => statuses.includes(r.status))
+  }, [type])
+
+  const { title, subtitle } = TYPE_LABELS[type] ?? {
+    title: 'Referrals',
+    subtitle: 'Manage and track all patient referrals.',
+  }
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-primary">Referrals</h2>
-          <p className="text-sm text-muted mt-0.5">Manage and track all patient referrals.</p>
+          <h2 className="text-2xl font-bold text-primary">{title}</h2>
+          <p className="text-sm text-muted mt-0.5">{subtitle}</p>
         </div>
         <Button onClick={() => navigate('/referrals/new')}>
           <Plus size={15} />
@@ -34,10 +59,9 @@ export default function ReferralsPage() {
       </div>
 
       <ReferralTable
-        referrals={REFERRALS}
-        total={1248}
+        referrals={referrals}
+        total={referrals.length}
         onView={(id) => navigate(`/referrals/${id}`)}
-        initialFilter={initialFilter}
       />
     </div>
   )
