@@ -17,6 +17,8 @@ def init_session():
         "diagnosis": {},
         "risk_tier": None,
         "rag_sources": [],
+        "email_sent": False,
+        "appointment_booked": False,
     }
 
     for key, val in defaults.items():

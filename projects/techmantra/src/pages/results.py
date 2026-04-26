@@ -3,6 +3,10 @@ import json
 import pandas as pd
 from db.db import save_diagnostic_report, get_recent_sessions
 
+# --- NEW INTEGRATION IMPORTS ---
+from integrations.notifications import send_summary
+from integrations.calendar_api import book_appointment
+
 def show():
     patient_id = st.session_state.get('patient_id')
 
@@ -31,6 +35,7 @@ def show():
     diag = st.session_state.diagnosis
     risk = diag.get('risk_tier', 'LOW').upper()
     session_id = st.session_state.get('session_id')
+    user_profile = st.session_state.get('user_profile', {})
 
     # 2. Display Urgent Banner
     if risk == "HIGH":
@@ -42,11 +47,37 @@ def show():
 
     st.title("📋 Diagnostic Report")
 
+    # --- NEW: TRIGGER AUTOMATION INTEGRATIONS ---
+    # We use session state flags to ensure these only run once per report generation
+    
+    # A. Send Email Notification (Always)
+    if not st.session_state.get('email_sent'):
+        with st.spinner("📧 Notifying your doctor via email..."):
+            email_success = send_summary(user_profile, diag, risk)
+            if email_success:
+                st.session_state['email_sent'] = True
+                st.toast("Doctor has been notified of this report.")
+
+    # B. Book Calendar Appointment (Only for MEDIUM risk)
+    if risk == "MEDIUM" and not st.session_state.get('appointment_booked'):
+        physician = user_profile.get("physician", {})
+        doctor_email = physician.get("email")
+        
+        if doctor_email:
+            with st.spinner("📅 Booking follow-up appointment..."):
+                appt_result = book_appointment(
+                    doctor_email=doctor_email,
+                    patient_email=user_profile.get("email"),
+                    patient_name=user_profile.get("name", "Patient"),
+                    risk_summary=f"MEDIUM Risk: {diag.get('summary', '')[:50]}..."
+                )
+                if appt_result:
+                    st.session_state['appointment_booked'] = True
+                    st.success(f"Appointment scheduled on Google Calendar with Dr. {physician.get('name', 'Provider')}")
+
     # --- STEP 4: FHIR HANDSHAKE ---
-    # This converts our AI output into a standard medical record
     if patient_id and session_id:
         with st.spinner("Generating FHIR R4 Record..."):
-            # Only one call needed here
             fhir_data = save_diagnostic_report(patient_id, session_id, diag)
             
         with st.expander("📂 View FHIR R4 JSON (Interoperability)", expanded=False):
@@ -59,7 +90,6 @@ def show():
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("### 🧬 Potential Conditions")
-        # Added safety get() to prevent crashes if top_conditions is missing
         for cond in diag.get('top_conditions', []):
             st.markdown(f"- **{cond['name']}** ({int(cond['probability']*100)}%)")
             
@@ -84,8 +114,10 @@ def show():
                         st.write(f"**Symptoms:** {entry['symptoms']}")
                         st.info(f"**Main Condition:** {past_diag.get('top_conditions', [{}])[0].get('name', 'N/A')}")
                         
-                        # Unique key per button using the index 'i'
                         if st.button(f"Reload This Report", key=f"reload_res_{i}"):
+                            # Reset flags so automation can re-run for a different report if desired
+                            st.session_state.email_sent = False
+                            st.session_state.appointment_booked = False
                             st.session_state.diagnosis = past_diag
                             st.session_state.session_id = entry['id']
                             st.rerun()
@@ -96,7 +128,9 @@ def show():
 
     st.divider()
     if st.button("🏠 Return to Dashboard"):
-        # Reset current diagnosis so user can start fresh from dashboard if they want
         st.session_state.diagnosis = None 
+        # Reset automation flags for the next session
+        st.session_state.email_sent = False
+        st.session_state.appointment_booked = False
         st.session_state.current_page = "Symptoms"
         st.rerun()
