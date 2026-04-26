@@ -44,7 +44,7 @@ export async function getReferralByToken(token: string) {
     .from("referrals")
     .select(
       `
-      id, diagnosis, urgency, status, clinical_notes, created_at,
+      id, doctor_id, diagnosis, urgency, status, clinical_notes, created_at,
       patients (full_name, date_of_birth, gender),
       specialist:doctors!referrals_referred_by_fkey (
         full_name,

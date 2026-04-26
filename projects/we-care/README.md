@@ -5,8 +5,8 @@
 
 | Name       | GitHub |
 | ---------- | ------ |
-| Arjun Giri |        |
-| Anil       |        |
+| Arjun Giri | [@arjungiri1234](https://github.com/arjungiri1234) |
+| Anil       | [@aniloli42](https://github.com/aniloli42) |
 
 ---
 
@@ -23,7 +23,7 @@ Patient referrals in healthcare are still largely manual. Doctors write free-tex
 **For doctors:**
 
 - Write a free-text clinical note as they normally would
-- AI (Google Gemini) extracts structured data automatically — patient details, diagnosis, urgency level, and required specialty
+- AI (Google Gemini 2.5 Flash) extracts structured data automatically — patient details, diagnosis, urgency level, and required specialty
 - Doctor reviews, edits if needed, selects the best-matched specialist, and submits in one flow
 - Live dashboard tracks every referral from submission to completion
 
@@ -56,7 +56,7 @@ Patient referrals in healthcare are still largely manual. Doctors write free-tex
 | Frontend         | Vite, React, TypeScript, TailwindCSS, Zustand, TanStack Query |
 | Backend          | Node.js, TypeScript                                           |
 | Database & Auth  | Supabase (PostgreSQL)                                         |
-| AI               | Google Gemini API (Gemini 1.5 Flash)                          |
+| AI               | Google Gemini API (Gemini 2.5 Flash)                          |
 | Design           | Google Stitch                                                 |
 | Containerization | Docker                                                        |
 
