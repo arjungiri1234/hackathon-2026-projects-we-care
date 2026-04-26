@@ -3,7 +3,6 @@ import { AppLayout } from "../components/layout/AppLayout";
 import DashboardPage from "../pages/DashboardPage";
 import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import LoginPage from "../pages/LoginPage";
-import AnalyticsPage from "../pages/AnalyticsPage";
 import NewReferralPage from "../pages/NewReferralPage";
 import ReferralsPage from "../pages/ReferralsPage";
 import PatientBookingConfirmationPage from "../pages/PatientBookingConfirmationPage";
@@ -40,7 +39,6 @@ export const router = createBrowserRouter([
           { path: "/referrals", element: <ReferralsPage /> },
           { path: "/referrals/new", element: <NewReferralPage /> },
           { path: "/referrals/:id", element: <ReferralDetailPage /> },
-          { path: "/analytics", element: <AnalyticsPage /> },
           { path: "/specialists", element: <SpecialistsPage /> },
           { path: "/settings", element: <SettingsPage /> },
         ],
