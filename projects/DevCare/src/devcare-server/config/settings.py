@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'user',
     'rehab',
     'ai_module',
+    'connections',
 ]
 
 MIDDLEWARE = [
