@@ -1,5 +1,4 @@
-import { useRef } from 'react'
-import { Bell, Search, Settings } from 'lucide-react'
+import { Bell, Settings } from 'lucide-react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 
@@ -19,7 +18,6 @@ export function Topbar() {
   const { pathname } = useLocation()
   const [searchParams] = useSearchParams()
   const clearAuth = useAuthStore((s) => s.clearAuth)
-  const searchRef = useRef<HTMLInputElement>(null)
 
   const activeType = searchParams.get('type')
 
@@ -40,16 +38,6 @@ export function Topbar() {
         Referral<br />Management
       </h1>
 
-      <div className="relative flex-1 max-w-xs">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-        <input
-          ref={searchRef}
-          type="search"
-          placeholder="Search patients..."
-          className="h-9 w-full rounded-lg border border-border bg-base pl-9 pr-3 text-sm placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1"
-        />
-      </div>
-
       <nav className="flex items-center gap-1 text-sm font-medium">
         {NAV_TABS.map(({ label, type }) => (
           <button
@@ -63,12 +51,6 @@ export function Topbar() {
             {label}
           </button>
         ))}
-        <button
-          onClick={() => searchRef.current?.focus()}
-          className="rounded px-3 py-1.5 text-muted transition-colors hover:text-primary"
-        >
-          Quick Search
-        </button>
       </nav>
 
       <div className="ml-auto flex items-center gap-2">
