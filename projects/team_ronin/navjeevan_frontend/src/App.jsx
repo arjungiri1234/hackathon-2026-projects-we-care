@@ -9,19 +9,20 @@ import HCDashboardPage from './pages/healthcare/HCDashboardPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import CitizenDashboard from './components/citizen/CitizenDashboard';
 import ProtectedRoute from './routes/ProtectedRoute';
+import CommunityDashboard from "./components/CommunityDashboard";
+
+
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-
+      <Route path="/community" element={<CommunityDashboard />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/activate" element={<ActivatePage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-
       <Route path="/healthcare/login" element={<HCLoginPage />} />
-
       <Route
         path="/dashboard"
         element={
@@ -38,7 +39,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

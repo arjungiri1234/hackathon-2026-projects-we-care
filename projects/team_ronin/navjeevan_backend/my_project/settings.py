@@ -36,7 +36,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    'user',
+    'user','visualisation'
 ]
 
 DJANGO_APPS = [
@@ -128,6 +128,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 from datetime import timedelta
 
 # Rest setup
@@ -135,8 +137,6 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'user.authentication.DualUserJWTAuthentication',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 5,
 }
 
 
