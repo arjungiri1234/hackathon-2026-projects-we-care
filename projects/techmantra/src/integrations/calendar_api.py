@@ -1,155 +1,100 @@
-# integrations/calendar.py
-# Purpose: Books a doctor appointment via Google Calendar
-# when patient risk tier is MEDIUM.
-# Uses credentials from creds_verification.py — no duplicate auth logic.
-# The event is added to the primary calendar and the doctor
-# receives an email invite automatically from Google.
-
 import sys
 import os
-
 from datetime import datetime, timedelta, timezone
-# datetime: for creating start and end times
-# timedelta: for adding hours to current time
-# timezone: for UTC timezone (Google Calendar requires timezone)
+import streamlit as st
 
-# Find the absolute path of the directory containing 'integrations'
-# This works whether you are in 'src' or 'integrations'
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
-
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
 from integrations.creds_verification import get_google_services
-# Import our shared credential handler
-# This handles all OAuth logic — calendar.py just uses the service
 
-def book_appointment(doctor_email, patient_email, patient_name, risk_summary):
+def get_doctor_availability(doctor_email, days_ahead=3):
     """
-    Creates a Google Calendar event for the patient's doctor appointment.
-    Called from pages/03_results.py when risk tier is MEDIUM.
-
-    doctor_email: string — doctor's email from patient profile
-    patient_name: string — patient's full name
-    risk_summary: string — e.g. "MEDIUM risk — Ear Infection"
-    Returns: created event dict or None if booking failed
+    Checks the doctor's Google Calendar and returns 30-min slots 
+    that are NOT currently busy between 9 AM and 5 PM.
     """
-    # ── GET AUTHENTICATED GOOGLE SERVICES ────────────────────────────
     services = get_google_services()
-
     if not services:
-        print("[calendar] Could not get Google services — appointment not booked")
-        return None
+        return []
 
-    # Get the calendar service client
+    calendar_service = services["calendar"]
+    
+    # Define the search window
+    now = datetime.now(timezone.utc)
+    search_end = now + timedelta(days=days_ahead)
+
+    # 1. Query FreeBusy API
+    body = {
+        "timeMin": now.isoformat(),
+        "timeMax": search_end.isoformat(),
+        "items": [{"id": doctor_email}]
+    }
+    
+    query = calendar_service.freebusy().query(body=body).execute()
+    busy_slots = query.get('calendars', {}).get(doctor_email, {}).get('busy', [])
+
+    # 2. Generate Potential Slots (9 AM to 5 PM)
+    available_slots = []
+    for day in range(days_ahead + 1):
+        current_day = (now + timedelta(days=day)).replace(hour=9, minute=0, second=0, microsecond=0)
+        
+        # Check slots every 30 mins until 5 PM
+        for _ in range(16): 
+            slot_start = current_day
+            slot_end = slot_start + timedelta(minutes=30)
+            
+            # Filter: Check if this slot overlaps with any 'busy' slot
+            is_busy = False
+            for busy in busy_slots:
+                b_start = datetime.fromisoformat(busy['start'].replace('Z', '+00:00'))
+                b_end = datetime.fromisoformat(busy['end'].replace('Z', '+00:00'))
+                # Overlap logic
+                if slot_start < b_end and slot_end > b_start:
+                    is_busy = True
+                    break
+            
+            if not is_busy and slot_start > now:
+                available_slots.append(slot_start.isoformat())
+            
+            current_day += timedelta(minutes=30)
+            
+    return available_slots
+
+def book_appointment(doctor_email, patient_email, patient_name, risk_summary, start_time_iso=None):
+    """
+    Modified to accept a specific start_time_iso from the UI.
+    """
+    services = get_google_services()
+    if not services: return None
     calendar_service = services["calendar"]
 
-    # ── BUILD EVENT TIMES ─────────────────────────────────────────────
-    # Schedule appointment 2 hours from now as a default
-    # In a real app this would use a proper scheduling system
-    # Using UTC timezone — Google Calendar requires timezone info
-    now_utc = datetime.now(timezone.utc)
-    start_time = now_utc + timedelta(hours=2)
-    end_time = start_time + timedelta(hours=1)  # 1 hour appointment
+    # Use selected time or default to 2 hours from now
+    if start_time_iso:
+        start_time = datetime.fromisoformat(start_time_iso)
+    else:
+        start_time = datetime.now(timezone.utc) + timedelta(hours=2)
+    
+    end_time = start_time + timedelta(minutes=30) # 30 min consult
 
-    # Google Calendar requires ISO format with timezone
-    # e.g. "2026-04-25T14:30:00+00:00"
-    start_iso = start_time.isoformat()
-    end_iso = end_time.isoformat()
-
-    # ── BUILD EVENT OBJECT ────────────────────────────────────────────
     event = {
-        # Event title shown in the calendar
         "summary": f"AI Triage Appointment — {patient_name} ({risk_summary})",
-
-        # Event description with clinical context
-        "description": (
-            f"This appointment was automatically scheduled by the AI Triage app.\n\n"
-            f"Patient: {patient_name}\n"
-            f"Risk Assessment: {risk_summary}\n\n"
-            f"Please review the triage summary sent to your email before this appointment.\n\n"
-            f"DISCLAIMER: This was generated by an AI triage assistant and requires clinical review."
-        ),
-
-        # Start and end times with timezone
-        "start": {
-            "dateTime": start_iso,
-            "timeZone": "UTC"
-        },
-        "end": {
-            "dateTime": end_iso,
-            "timeZone": "UTC"
-        },
-
-        # Attendees — Google Calendar automatically sends email invite
-        "attendees": [
-            {"email": doctor_email},
-            {"email": patient_email}
-        ],
-
-        # Send email notifications to all attendees
+        "description": f"Patient: {patient_name}\nRisk: {risk_summary}\n\nScheduled via CareDevi AI.",
+        "start": {"dateTime": start_time.isoformat(), "timeZone": "UTC"},
+        "end": {"dateTime": end_time.isoformat(), "timeZone": "UTC"},
+        "attendees": [{"email": doctor_email}, {"email": patient_email}],
         "reminders": {
             "useDefault": False,
-            "overrides": [
-                # Email reminder 1 hour before
-                {"method": "email", "minutes": 60},
-                # Popup reminder 15 minutes before
-                {"method": "popup", "minutes": 15}
-            ]
+            "overrides": [{"method": "email", "minutes": 60}]
         }
     }
 
-    # ── CREATE THE EVENT ──────────────────────────────────────────────
     try:
-        # insert() creates the event on the primary calendar
-        # sendUpdates="all" sends email invites to all attendees
         created_event = calendar_service.events().insert(
-            calendarId="primary",
-            body=event,
-            sendUpdates="all"   # Sends email invite to doctor automatically
+            calendarId="primary", body=event, sendUpdates="all"
         ).execute()
-
-        print(f"[calendar] Appointment booked successfully!")
-        print(f"[calendar] Event ID: {created_event.get('id')}")
-        print(f"[calendar] Start: {start_iso}")
-        print(f"[calendar] Doctor notified at: {doctor_email}")
-
         return created_event
-
     except Exception as e:
-        print(f"[calendar] Failed to create calendar event: {e}")
+        print(f"Error: {e}")
         return None
-
-
-if __name__ == "__main__":
-    print("=" * 50)
-    print("Testing Calendar Appointment Booking")
-    print("=" * 50)
-
-    # Use your own email as the doctor email for testing
-    # Change this to your email before running
-    TEST_DOCTOR_EMAIL = "rvdjahnavicheethirala@gmail.com"
-    TEST_PATIENT_EMAIL = "harshinipenthala@gmail.com"
-    TEST_PATIENT_NAME = "Test Patient"
-    TEST_RISK_SUMMARY = "MEDIUM risk — Ear Infection"
-
-    print(f"Booking test appointment...")
-    print(f"Doctor email: {TEST_DOCTOR_EMAIL}")
-    print(f"Patient: {TEST_PATIENT_NAME}")
-
-    result = book_appointment(
-        doctor_email=TEST_DOCTOR_EMAIL,
-        patient_email=TEST_PATIENT_EMAIL,
-        patient_name=TEST_PATIENT_NAME,
-        risk_summary=TEST_RISK_SUMMARY
-    )
-
-    if result:
-        print(f"\nTEST PASSED!")
-        print(f"Event created: {result.get('summary')}")
-        print(f"Event link: {result.get('htmlLink')}")
-    else:
-        print("\nTEST FAILED — check error messages above")
-
-    print("=" * 50)
