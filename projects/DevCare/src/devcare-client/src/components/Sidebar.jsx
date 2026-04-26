@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import logo from "../assets/Devcare-logo.png";
+import ProfileSettingsDrawer from "./ProfileSettingsDrawer";
+import { getCurrentProfile } from "../api/authApi";
 import {
   LayoutDashboard,
   Users,
@@ -11,7 +14,8 @@ import {
   BookOpen,
   CalendarDays,
   Activity,
-  MessageCircle,
+  Settings2,
+  UserCircle2,
 } from "lucide-react";
 
 const ACCESS_TOKEN_KEY = "devcare_access_token";
@@ -21,13 +25,57 @@ function Sidebar() {
   const navigate = useNavigate();
   const role = localStorage.getItem(ROLE_KEY);
   const username = localStorage.getItem("devcare_username");
+  const storedAvatarUrl = localStorage.getItem('devcare_avatar_url') || '';
+  const [profile, setProfile] = useState({
+    username: username || 'User',
+    role: role || 'patient',
+    avatar_url: storedAvatarUrl,
+  });
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProfile() {
+      try {
+        const profileData = await getCurrentProfile();
+        if (!active) return;
+
+        setProfile(profileData);
+        if (profileData.username) {
+          localStorage.setItem('devcare_username', profileData.username);
+        }
+        if (profileData.avatar_url) {
+          localStorage.setItem('devcare_avatar_url', profileData.avatar_url);
+        }
+      } catch {
+        if (!active) return;
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem("devcare_refresh_token");
-    localStorage.removeItem("devcare_username");
-    localStorage.removeItem(ROLE_KEY);
-    navigate("/");
+    // Clear all devcare related localStorage items
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("devcare_")) {
+        localStorage.removeItem(key);
+      }
+    });
+    // Use window.location.href for a full reload to clear any React/memory state
+    window.location.href = "/";
+  };
+
+  const handleProfileUpdated = (updatedProfile) => {
+    setProfile(updatedProfile);
+    if (updatedProfile?.avatar_url) {
+      localStorage.setItem('devcare_avatar_url', updatedProfile.avatar_url);
+    }
   };
 
   const doctorLinks = [
@@ -96,19 +144,35 @@ function Sidebar() {
       </div>
 
       <div className="mt-auto pt-6 border-t border-[var(--color-border)]">
-        <div className="flex items-center gap-3 px-2 mb-6 group cursor-pointer">
-          <div className="h-10 w-10 rounded-xl bg-[var(--color-primary-soft)] flex items-center justify-center font-bold text-[var(--color-primary)] shadow-sm group-hover:scale-105 transition-transform">
-            {username ? username[0].toUpperCase() : "U"}
+        <button
+          type="button"
+          onClick={() => setProfileOpen(true)}
+          className="flex w-full items-center gap-4 rounded-3xl px-3 py-3 text-left transition hover:bg-slate-50"
+        >
+          <div className="relative h-12 w-12 overflow-hidden rounded-2xl bg-[var(--color-primary-soft)] flex items-center justify-center shadow-sm ring-2 ring-white transition-transform group-hover:scale-105">
+            {profile.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt="Profile"
+                className="h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.style.display = 'none'
+                }}
+              />
+            ) : (
+              <UserCircle2 size={28} className="text-[var(--color-primary)]" />
+            )}
           </div>
-          <div className="overflow-hidden flex-1">
+          <div className="overflow-hidden flex-1 leading-tight">
             <p className="text-sm font-semibold text-[var(--color-secondary)] truncate">
-              {username || "User"}
+              {profile.username || username || "User"}
             </p>
-            <p className="text-[10px] font-bold text-[var(--color-text-light)] uppercase tracking-wider">
-              {role}
+            <p className="mt-1 text-[10px] font-bold text-[var(--color-text-light)] uppercase tracking-wider">
+              {profile.role || role}
             </p>
           </div>
-        </div>
+          <Settings2 size={16} className="text-[var(--color-text-light)]" />
+        </button>
 
         <button
           onClick={handleLogout}
@@ -118,6 +182,12 @@ function Sidebar() {
           <span>Sign Out</span>
         </button>
       </div>
+
+      <ProfileSettingsDrawer
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        onProfileUpdated={handleProfileUpdated}
+      />
     </aside>
   );
 }

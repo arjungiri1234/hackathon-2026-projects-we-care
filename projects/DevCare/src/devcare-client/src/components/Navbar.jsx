@@ -19,10 +19,11 @@ function Navbar() {
   const username = localStorage.getItem('devcare_username')
 
   const handleLogout = () => {
-    localStorage.removeItem(ACCESS_TOKEN_KEY)
-    localStorage.removeItem('devcare_refresh_token')
-    localStorage.removeItem('devcare_username')
-    localStorage.removeItem(ROLE_KEY)
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('devcare_')) {
+        localStorage.removeItem(key)
+      }
+    })
     window.location.href = '/'
   }
 

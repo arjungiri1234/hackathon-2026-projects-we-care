@@ -5,6 +5,49 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import UserProfile
 
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username')
+    email = serializers.EmailField(source='user.email')
+    avatar_url = serializers.SerializerMethodField()
+    joined_at = serializers.DateTimeField(source='created_at', read_only=True)
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            'id',
+            'username',
+            'email',
+            'role',
+            'joined_at',
+            'bio',
+            'avatar',
+            'avatar_url',
+        ]
+        read_only_fields = ['id', 'role', 'joined_at', 'avatar_url']
+
+    def get_avatar_url(self, obj):
+        if not obj.avatar:
+            return None
+
+        request = self.context.get('request')
+        if request is not None:
+            return request.build_absolute_uri(obj.avatar.url)
+        return obj.avatar.url
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        user = instance.user
+
+        for attr, value in user_data.items():
+            setattr(user, attr, value)
+        user.save()
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
@@ -75,4 +118,4 @@ class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
             'email': self.user.email,
             'role': profile.role,
         }
-        return data
+        return data

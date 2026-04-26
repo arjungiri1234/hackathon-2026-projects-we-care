@@ -21,14 +21,32 @@ import SessionResult from './pages/Patient/SessionResult'
 import SessionDetail from './pages/Patient/SessionDetail'
 import TherapyRoadmap from './pages/Patient/TherapyRoadmap'
 import Progress from './pages/Patient/Progress'
-import Feedback from './pages/Patient/Feedback'
 import JoinDoctor from './pages/Patient/JoinDoctor'
 import StartSession from './pages/Patient/StartSession'
+
+const ACCESS_TOKEN_KEY = 'devcare_access_token'
+const ROLE_KEY = 'devcare_role'
+
+function getHomeRouteElement() {
+  const isAuthenticated = Boolean(localStorage.getItem(ACCESS_TOKEN_KEY))
+  const role = (localStorage.getItem(ROLE_KEY) || 'patient').toLowerCase()
+
+  if (!isAuthenticated) {
+    return <LandingPage />
+  }
+
+  return (
+    <Navigate
+      to={role === 'doctor' ? '/dashboard/doctor' : '/dashboard/patient'}
+      replace
+    />
+  )
+}
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={getHomeRouteElement()} />
       <Route path="/login" element={<AuthPage initialMode="login" />} />
       <Route path="/register" element={<AuthPage initialMode="register" />} />
       <Route path="/join/:token" element={<JoinDoctor />} />
