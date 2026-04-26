@@ -1,6 +1,7 @@
 import { ChevronDown, UserCircle2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "../components/ui/Button";
+import { useProfileStore } from "../stores/profileStore";
 
 const SPECIALTIES = [
   "Cardiology",
@@ -23,11 +24,12 @@ interface ProfileForm {
 }
 
 export default function SettingsPage() {
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { fullName: storedName, specialty: storedSpecialty, avatarUrl: storedAvatar, setProfile } = useProfileStore();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(storedAvatar);
   const [form, setForm] = useState<ProfileForm>({
-    fullName: "Dr. Jameson",
+    fullName: storedName,
     licenseNumber: "",
-    specialty: "",
+    specialty: storedSpecialty,
     hospital: "",
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +40,15 @@ export default function SettingsPage() {
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) setAvatarUrl(URL.createObjectURL(file));
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setAvatarUrl(url);
+      setProfile({ avatarUrl: url });
+    }
+  }
+
+  function handleSave() {
+    setProfile({ fullName: form.fullName, specialty: form.specialty });
   }
 
   const inputCls =
@@ -158,7 +168,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="flex justify-end border-t border-border px-6 py-4">
-          <Button>Save Profile</Button>
+          <Button onClick={handleSave}>Save Profile</Button>
         </div>
       </div>
     </div>

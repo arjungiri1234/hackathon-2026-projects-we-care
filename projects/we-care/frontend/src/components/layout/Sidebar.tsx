@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  HelpCircle,
   LayoutDashboard,
   Plus,
   Settings,
@@ -8,6 +7,7 @@ import {
   Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useProfileStore } from "../../stores/profileStore";
 import { Logo } from "../ui/Logo";
 import { SidebarNavItem } from "./SidebarNavItem";
 
@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function Sidebar() {
   const navigate = useNavigate();
+  const { fullName, specialty, avatarUrl } = useProfileStore();
 
   return (
     <aside className="flex w-60 shrink-0 flex-col bg-sidebar text-white">
@@ -57,10 +58,21 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-white/10 px-3 py-4">
-        <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white transition-colors">
-          <HelpCircle size={18} />
-          Help Center
-        </button>
+        <div className="flex items-center gap-3 px-3 py-2">
+          <div className="h-8 w-8 shrink-0 rounded-full overflow-hidden bg-accent flex items-center justify-center text-sm font-semibold text-white">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+            ) : (
+              <span>{fullName?.[0] ?? "U"}</span>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-white">{fullName}</p>
+            {specialty && (
+              <p className="truncate text-xs text-slate-400">{specialty}</p>
+            )}
+          </div>
+        </div>
       </div>
     </aside>
   );
