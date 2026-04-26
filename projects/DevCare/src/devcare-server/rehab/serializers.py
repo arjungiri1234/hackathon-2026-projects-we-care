@@ -40,7 +40,14 @@ class RehabPlanCreateSerializer(serializers.Serializer):
     patient_id = serializers.IntegerField(min_value=1)
     name = serializers.CharField(max_length=120)
     tasks = serializers.ListField(child=serializers.CharField(), required=False, default=list)
-    exercises = RehabPlanExerciseWriteSerializer(many=True)
+    exercises = RehabPlanExerciseWriteSerializer(many=True, required=False, default=list)
+
+    def validate(self, data):
+        exercises = data.get("exercises", [])
+        tasks = data.get("tasks", [])
+        if not exercises and not tasks:
+            raise serializers.ValidationError("At least one exercise or one task must be provided.")
+        return data
 
     def validate_patient_id(self, value):
         try:
@@ -57,7 +64,7 @@ class RehabPlanCreateSerializer(serializers.Serializer):
 
     def validate_exercises(self, value):
         if not value:
-            raise serializers.ValidationError("At least one exercise is required.")
+            return value
 
         seen_orders = set()
         exercise_ids = []

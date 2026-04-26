@@ -110,10 +110,7 @@ class SessionCompleteView(APIView):
 				status=status.HTTP_403_FORBIDDEN,
 			)
 
-		session = get_object_or_404(
-			ExerciseSession.objects.select_related("patient", "plan").prefetch_related("plan__plan_exercises"),
-			id=session_id,
-		)
+		session = get_object_or_404(ExerciseSession, id=session_id)
 
 		if session.patient_id != request.user.id:
 			return Response(
@@ -121,28 +118,57 @@ class SessionCompleteView(APIView):
 				status=status.HTTP_403_FORBIDDEN,
 			)
 
-		serializer = SessionCompleteSerializer(data=request.data)
-		serializer.is_valid(raise_exception=True)
-
-		allowed_exercise_ids = set(
-			session.plan.plan_exercises.values_list("exercise_id", flat=True)
-		)
-		submitted_exercise_ids = {
-			item["exercise_id"] for item in serializer.validated_data["results"]
-		}
-		invalid_ids = sorted(submitted_exercise_ids - allowed_exercise_ids)
-		if invalid_ids:
+		if session.completed_at is not None:
 			return Response(
-				{
-					"detail": "Submitted results include exercises not assigned in this plan.",
-					"exercise_ids": invalid_ids,
-				},
+				{"detail": "Session is already completed."},
 				status=status.HTTP_400_BAD_REQUEST,
 			)
 
-		session = serializer.save_results(session)
-		response_serializer = ExerciseSessionSerializer(session)
-		return Response(response_serializer.data, status=status.HTTP_200_OK)
+		exercise_results = request.data.get("exercise_results", [])
+		body_part_scores = request.data.get("body_part_scores", [])
+
+		if not isinstance(exercise_results, list) or not isinstance(body_part_scores, list):
+			return Response(
+				{"detail": "Both exercise_results and body_part_scores must be lists."},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+
+		results_to_create = []
+		for idx, item in enumerate(exercise_results):
+			name = item.get("name")
+			reps = item.get("reps", 0)
+			accuracy = item.get("accuracy", 0.0)
+			duration = item.get("duration", 0.0)
+			
+			if not name:
+				continue
+				
+			exercise = ExerciseTemplate.objects.filter(name=name).first()
+			if not exercise:
+				continue
+				
+			results_to_create.append(
+				ExerciseResult(
+					session=session,
+					exercise=exercise,
+					reps=reps,
+					accuracy=accuracy,
+					duration=duration,
+					order=idx + 1
+				)
+			)
+
+		ExerciseResult.objects.bulk_create(results_to_create)
+
+		from django.utils import timezone
+		session.body_part_scores = body_part_scores
+		session.completed_at = timezone.now()
+		session.save(update_fields=["body_part_scores", "completed_at"])
+
+		return Response({
+			"message": "Session completed successfully",
+			"exercise_count": len(results_to_create)
+		}, status=status.HTTP_200_OK)
 
 
 class PatientSessionHistoryView(APIView):
