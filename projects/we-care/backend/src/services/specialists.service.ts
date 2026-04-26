@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { extractLookupName } from "./lookup-service";
 
 interface SpecialistsQueryOptions {
   specialty?: string;
@@ -11,26 +12,26 @@ export async function getAvailableSpecialists({
   page,
   pageSize,
 }: SpecialistsQueryOptions) {
-  let query = supabase
-    .from("specialties")
-    .select("id, name")
-    .order("name");
+  const { data, error } = await supabase
+    .from("doctors")
+    .select("id, full_name, contact_number, specialties(name), hospitals(name)")
+    .order("full_name");
 
-  if (specialty) {
-    query = query.ilike("name", `%${specialty}%`) as typeof query;
-  }
-
-  const { data, error } = await query;
   if (error) throw new Error(error.message);
 
-  const allItems = (data ?? []).map((s) => ({
-    id: s.id,
-    full_name: s.name,
-    specialty: s.name,
-    hospital: "",
-    phone: "",
-    available: true,
-  }));
+  const allItems = data
+    .map((doctor) => ({
+      id: doctor.id,
+      full_name: doctor.full_name,
+      specialty: extractLookupName(doctor.specialties) ?? "",
+      hospital: extractLookupName(doctor.hospitals) ?? "",
+      phone: doctor.contact_number ?? "",
+      available: true,
+    }))
+    .filter((doctor) => {
+      if (!specialty) return true;
+      return doctor.specialty.toLowerCase().includes(specialty.toLowerCase());
+    });
 
   const total = allItems.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
