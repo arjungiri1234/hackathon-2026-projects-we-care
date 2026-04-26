@@ -1,21 +1,25 @@
-import { useState } from 'react'
-import { Sparkles } from 'lucide-react'
-import { Button } from '../ui/Button'
+import { Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Button } from "../ui/Button";
 
 interface NewReferralStep1Props {
-  onExtract: (note: string) => void
-  loading: boolean
+  onExtract: (note: string) => void;
+  loading: boolean;
 }
 
-export function NewReferralStep1({ onExtract, loading }: NewReferralStep1Props) {
-  const [note, setNote] = useState('')
+export function NewReferralStep1({
+  onExtract,
+  loading,
+}: NewReferralStep1Props) {
+  const [note, setNote] = useState("");
 
   return (
     <div className="rounded-xl border border-border bg-surface shadow-sm">
       <div className="p-6 border-b border-border">
-        <h3 className="text-base font-semibold text-primary">Clinical Notes</h3>
+        <h3 className="font-semibold text-primary">Clinical Notes</h3>
         <p className="text-sm text-muted mt-0.5">
-          Provide detailed patient condition context to help AI extract relevant entities.
+          Provide detailed patient condition context to help AI extract relevant
+          entities.
         </p>
       </div>
 
@@ -45,5 +49,5 @@ export function NewReferralStep1({ onExtract, loading }: NewReferralStep1Props) 
         </Button>
       </div>
     </div>
-  )
+  );
 }

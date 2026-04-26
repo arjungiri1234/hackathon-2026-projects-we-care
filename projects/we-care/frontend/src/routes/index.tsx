@@ -4,8 +4,8 @@ import SignupPage from '../pages/SignupPage'
 import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 import DashboardPage from '../pages/DashboardPage'
 import NewReferralPage from '../pages/NewReferralPage'
+import ReferralDetailPage from '../pages/ReferralDetailPage'
 import {
-  ReferralDetailPage,
   SpecialistsPage,
   PatientPortalPage,
   NotFoundPage,
