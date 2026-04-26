@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react'
-import { UserCircle2, ChevronDown, ArrowRight } from 'lucide-react'
-import { ProgressBar } from '../components/ui/ProgressBar'
+import { UserCircle2, ChevronDown } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 
 const SPECIALTIES = [
@@ -23,10 +22,7 @@ interface ProfileForm {
   hospital: string
 }
 
-const TOTAL_STEPS = 3
-
 export default function SettingsPage() {
-  const [step, setStep] = useState(1)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [form, setForm] = useState<ProfileForm>({
     fullName: 'Dr. Jameson',
@@ -45,24 +41,17 @@ export default function SettingsPage() {
     if (file) setAvatarUrl(URL.createObjectURL(file))
   }
 
-  function handleContinue() {
-    if (step < TOTAL_STEPS) setStep((s) => s + 1)
-  }
-
   const inputCls = 'w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-primary placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1'
   const selectCls = `${inputCls} cursor-pointer appearance-none pr-9`
 
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-primary">Welcome, {form.fullName}</h2>
-        <p className="text-sm text-muted mt-1">Please complete your professional profile to start using RefAI.</p>
+        <h2 className="text-2xl font-bold text-primary">Settings</h2>
+        <p className="text-sm text-muted mt-1">Manage your professional profile.</p>
       </div>
 
-      <ProgressBar total={TOTAL_STEPS} current={step} />
-
       <div className="rounded-xl border border-border bg-surface shadow-sm">
-        {/* Profile picture */}
         <div className="flex items-start gap-5 border-b border-border p-6">
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -87,7 +76,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Form */}
         <div className="p-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -137,12 +125,8 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-end border-t border-border px-6 py-4">
-          <Button onClick={handleContinue}>
-            Save and Continue
-            <ArrowRight size={15} />
-          </Button>
+          <Button>Save Profile</Button>
         </div>
       </div>
     </div>
