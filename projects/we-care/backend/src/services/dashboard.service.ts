@@ -140,7 +140,7 @@ export async function getDashboardSummary(doctorId: string, type: ReferralViewTy
       id: referral.id,
       patient: patient?.full_name ?? "Unknown Patient",
       diagnosis: referral.diagnosis ?? "Unspecified diagnosis",
-      specialty: referral.required_specialty ?? relatedDoctor?.specialty ?? "General",
+      specialty: referral.required_specialty ?? "General",
       specialist: relatedDoctor?.full_name ?? "Unassigned",
       urgency: toReferralUrgency(referral.urgency),
       status: toReferralStatus(referral.status),
